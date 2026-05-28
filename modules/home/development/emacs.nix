@@ -1,11 +1,15 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.myHome.development.emacs;
 in
 {
-  options.myHome.development.emacs.enable =
-    lib.mkEnableOption "Emacs configuration";
+  options.myHome.development.emacs.enable = lib.mkEnableOption "Emacs configuration";
 
   config = lib.mkIf cfg.enable {
     programs.emacs = {
@@ -56,9 +60,9 @@ in
       (use-package eglot :ensure nil :hook (nix-mode . eglot-ensure))
     '';
 
-
     home.sessionVariables = {
       EDITOR = "emacs";
+      VISUAL = "emacs";
     };
   };
 }

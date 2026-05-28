@@ -1,0 +1,26 @@
+{ ... }:
+
+{
+  imports = [
+    ../core/session.nix
+    ../core/shell.nix
+    ../core/xdg.nix
+    ../cli/fish.nix
+    ../cli/git.nix
+    ../cli/prompt.nix
+    ../cli/terminal.nix
+    ../cli/ghostty.nix
+    ../cli/lazygit.nix
+    ../cli/tmux.nix
+    ../cli/glow.nix
+    ../development/editor.nix
+    ../development/emacs.nix
+    ../development/tools.nix
+    ../desktop/apps.nix
+    ../desktop/fonts.nix
+    ../desktop/fcitx5.nix
+    ../desktop/mime.nix
+    ../desktop/niri.nix
+    ../secrets/local-files.nix
+  ];
+}

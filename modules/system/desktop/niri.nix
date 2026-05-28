@@ -1,22 +1,59 @@
-{ pkgs, ... }:
-
 {
-  program.niri.enable = true;
-  services.displayManager.gdm.enable = true;
-  networking.networkmanager.enable = true;
-  hardware.bluetooth.enable = true;
-  services.upower.enable = true;
-  services.power-profiles-daemon.enable = true;
+  config,
+  inputs,
+  lib,
+  pkgs,
+  ...
+}:
 
-  environment.systemPackages = with pkgs; [
-    niri
-    xwayland-satellite
-    wl-clipboard
-    grim
-    slurp
-    brightnessctl
-    playerctl
-    fuzzel
-    ghostty
-  ];
+let
+  cfg = config.mySystem.desktop.niri;
+  system = pkgs.stdenv.hostPlatform.system;
+in
+{
+  options.mySystem.desktop.niri.enable = lib.mkEnableOption "Niri desktop system integration";
+
+  config = lib.mkIf cfg.enable {
+    programs.niri.enable = true;
+
+    services = {
+      xserver.enable = true;
+      displayManager.gdm.enable = true;
+      upower.enable = true;
+      power-profiles-daemon.enable = true;
+    };
+
+    hardware.bluetooth.enable = true;
+
+    xdg.portal = {
+      enable = true;
+      config.niri = {
+        default = [ "gtk" ];
+        "org.freedesktop.impl.portal.FileChooser" = [ "gtk" ];
+      };
+      extraPortals = with pkgs; [
+        xdg-desktop-portal-gtk
+      ];
+    };
+
+    environment.systemPackages =
+      (with pkgs; [
+        niri
+        xwayland-satellite
+        wl-clipboard
+        grim
+        slurp
+        swappy
+        brightnessctl
+        playerctl
+        fuzzel
+        ghostty
+        swayidle
+        swaylock
+        mako
+      ])
+      ++ [
+        inputs.noctalia.packages.${system}.default
+      ];
+  };
 }
