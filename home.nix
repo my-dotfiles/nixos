@@ -1,6 +1,8 @@
 { config, pkgs, ... }:
 
 {
+  imports = [./modules/home/development/emacs.nix];
+  myHome.development.emacs.enable = true;
   home.username = "yurikon";
   home.homeDirectory = "/home/yurikon";
   home.stateVersion = "25.11";
