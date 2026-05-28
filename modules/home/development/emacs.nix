@@ -11,14 +11,27 @@ in
     programs.emacs = {
       enable = true;
       package = pkgs.emacs-pgtk;
-    };
+      extraPackages = epkgs: with epkgs; [
+        use-package
 
+	vertico
+	marginalia
+	orderless
+	consult
+	which-key
+
+	nix-mode
+	magit
+      ];
+    };
     home.packages = with pkgs; [
+      nixd
+      nixfmt-rfc-style
       ripgrep
       fd
-      imagemagick
-      sqlite
-      pandoc
     ];
+    home.sessionVariables = {
+     EDITOR = "emacs";
+    };
   };
 }

@@ -51,6 +51,7 @@
     fcitx5 = {
       waylandFrontend = true;
       addons = with pkgs; [
+	emacs-pgtk
         qt6Packages.fcitx5-chinese-addons
         fcitx5-gtk
 	fcitx5-rime
