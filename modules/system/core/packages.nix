@@ -12,6 +12,8 @@ in
   options.mySystem.core.packages.enable = lib.mkEnableOption "base system packages";
 
   config = lib.mkIf cfg.enable {
+    environment.localBinInPath = true;
+
     environment.systemPackages = with pkgs; [
       vim
       wget

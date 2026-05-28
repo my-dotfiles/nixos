@@ -24,6 +24,7 @@
 
   myHome.development.emacs.enable = true;
   myHome.development.tools.enable = true;
+  myHome.development.codex.enable = true;
 
   myHome.desktop.apps.enable = true;
   myHome.desktop.fonts.enable = true;
