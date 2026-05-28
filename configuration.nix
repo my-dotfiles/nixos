@@ -8,6 +8,7 @@
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
+      ./modules/system/desktop/niri.nix
     ];
 
   # Bootloader.
@@ -69,8 +70,8 @@
 
   # Configure keymap in X11
   services.xserver.xkb = {
-    layout = "cn";
-    variant = "";
+    layout = "us";
+    options = "ctrl:nocaps";
   };
 
   # Enable CUPS to print documents.
@@ -158,4 +159,13 @@
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
   services.openssh.enable = true;
+
+  systemd.services.nix-daemon.environment = {
+    http_proxy = "http://127.0.0.1:7890";
+    https_proxy = "https://127.0.0.1:789";
+    HTTP_PROXY = "http://127.0.0.1:7890";
+    HTTPS_PROXY = "http://127.0.0.1:7890";
+    all_proxy = "socks5h://127.0.0.1:7890";
+    ALL_PROXY = "socks5h://127.0.0.1:7890";
+  };
 }

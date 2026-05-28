@@ -1,7 +1,10 @@
 { config, pkgs, ... }:
 
 {
-  imports = [./modules/home/development/emacs.nix];
+  imports = [
+    ./modules/home/development/emacs.nix
+    ./modules/home/desktop/niri.nix
+  ];
   myHome.development.emacs.enable = true;
   home.username = "yurikon";
   home.homeDirectory = "/home/yurikon";
