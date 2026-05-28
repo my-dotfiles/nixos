@@ -11,5 +11,7 @@
     bat
     eza
     fzf
+
+    flclash
   ];
 }
