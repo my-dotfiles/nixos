@@ -1,84 +1,82 @@
-# NixOS Configuration
+# NixOS 配置
 
-This repository is the declarative configuration for Yurikon's NixOS
-workstation. It manages both system-level NixOS configuration and user-level
-Home Manager configuration from one flake.
+这个仓库是 Yurikon 这台 NixOS 工作站的声明式配置。它用一个 flake 同时管理：
 
-The current machine was migrated from Arch Linux. The backup used during the
-migration lives outside this repository at:
+- NixOS 系统级配置
+- Home Manager 用户级配置
+
+这台机器从 Arch Linux 迁移而来。迁移时使用的备份位于仓库外：
 
 ```text
 /run/media/yurikon/Momonga/MyData/Backup/nixos-migration-2026-05-28/
 ```
 
-Use the backup as reference material only. Do not copy runtime state, caches,
-tokens, private keys, browser sessions, or generated databases into this repo.
+备份只作为参考资料使用。不要把运行时状态、缓存、token、私钥、浏览器会话、
+生成数据库等内容复制进这个仓库。
 
-## Entry Points
+## 配置入口
 
 ```text
-flake.nix                   Flake inputs and nixosConfigurations.nixos.
-hosts/nixos/default.nix     Host entry for this machine.
-home.nix                    Home Manager user entry for yurikon.
-configuration.nix           Compatibility shim that imports hosts/nixos.
-hardware-configuration.nix  Generated hardware and filesystem config.
+flake.nix                   flake inputs 和 nixosConfigurations.nixos。
+hosts/nixos/default.nix     这台机器的系统入口。
+home.nix                    yurikon 用户的 Home Manager 入口。
+configuration.nix           兼容入口，只 import hosts/nixos。
+hardware-configuration.nix  由 nixos-generate-config 生成的硬件配置。
 ```
 
-The canonical system entry is `hosts/nixos/default.nix`. The root
-`configuration.nix` is kept so the layout still looks familiar after migrating
-from `/etc/nixos`, but new system configuration should usually go under
-`modules/system`.
+当前推荐的系统入口是 `hosts/nixos/default.nix`。根目录的 `configuration.nix`
+只是为了从 `/etc/nixos` 迁移过来时更容易理解；新的系统配置通常应该放到
+`modules/system`。
 
-## Directory Layout
+## 目录结构
 
 ```text
 hosts/
-  nixos/             Per-host imports and host-only values.
+  nixos/             单台机器的 imports 和 host-only 配置。
 
 modules/
   system/
-    core/            Boot, Nix settings, locale, users, base packages.
-    desktop/         System integration for desktop sessions.
-    services/        System services such as PipeWire, OpenSSH, printing.
-    profiles/        System module bundles.
+    core/            启动、Nix 设置、locale、用户、基础系统包。
+    desktop/         桌面会话的系统级集成。
+    services/        PipeWire、OpenSSH、打印等系统服务。
+    profiles/        系统模块组合。
 
   home/
-    core/            XDG, shell/session, stable user defaults.
-    cli/             Terminal tools and command-line workflow.
-    desktop/         GUI apps, fonts, MIME, fcitx5, Niri config.
-    development/     Editors and global development tools.
-    secrets/         Hooks for local secret files; no secret values.
-    profiles/        Home Manager module bundles.
+    core/            XDG、shell/session、稳定的用户默认行为。
+    cli/             终端工具和命令行工作流。
+    desktop/         GUI 应用、字体、MIME、fcitx5、Niri 配置。
+    development/     编辑器和全局开发工具。
+    secrets/         本地 secret 文件接入；不存放 secret 明文。
+    profiles/        Home Manager 模块组合。
 ```
 
-## Applying Changes
+## 常用命令
 
-Build and switch the full system, including Home Manager:
+切换完整系统配置，包括 Home Manager：
 
 ```sh
 sudo nixos-rebuild switch --flake path:/home/yurikon/nixos-config#nixos
 ```
 
-Check evaluation without building:
+只检查求值，不实际构建：
 
 ```sh
 nix flake check --no-build path:/home/yurikon/nixos-config
 ```
 
-Format Nix files:
+格式化 Nix 文件：
 
 ```sh
 nixfmt flake.nix home.nix configuration.nix hosts/**/*.nix modules/**/*.nix
 ```
 
-The `path:` form is intentional while the worktree contains new untracked files.
-Plain `nix flake check` uses the Git source view and can miss files that have
-not been added to Git yet.
+这里使用 `path:` 是有意的。当前工作区里有不少新文件还没有加入 Git，普通
+`nix flake check` 会使用 Git 视角，可能看不到未跟踪文件。
 
-## System Configuration
+## 系统配置
 
-System modules use the `mySystem.*` namespace and expose feature flags. A leaf
-module should generally look like this:
+系统模块使用 `mySystem.*` 命名空间，并通过 feature flag 启用。一个 leaf
+module 通常长这样：
 
 ```nix
 { config, lib, pkgs, ... }:
@@ -96,90 +94,90 @@ in
 }
 ```
 
-Enable system features from `modules/system/profiles/workstation.nix`. Keep
-host-only values such as `networking.hostName`, `system.stateVersion`, and
-hardware imports in `hosts/nixos/default.nix`.
+系统功能在 `modules/system/profiles/workstation.nix` 中启用。只属于这台机器的
+配置，例如 `networking.hostName`、`system.stateVersion`、硬件配置 import，
+放在 `hosts/nixos/default.nix`。
 
 ## Home Manager
 
-Home modules use the `myHome.*` namespace. `home.nix` should stay small: it
-sets the username, home directory, state version, and imports the workstation
-profile.
+Home Manager 模块使用 `myHome.*` 命名空间。`home.nix` 应保持很小，只设置：
 
-Enable user features from `modules/home/profiles/workstation.nix`. Leaf modules
-should prefer structured Home Manager options such as `programs.*`,
-`services.*`, `xdg.configFile`, and `home.file`.
+- 用户名
+- home 目录
+- Home Manager stateVersion
+- workstation profile import
 
-The global editor is Emacs. Project-specific language servers, compilers, and
-formatters should normally be declared in each project's flake or dev shell.
-Only common Nix and shell maintenance tools are installed globally.
+用户功能在 `modules/home/profiles/workstation.nix` 中启用。leaf module 优先使用
+Home Manager 的结构化选项，例如 `programs.*`、`services.*`、`xdg.configFile`、
+`home.file`。
 
-## Desktop
+当前全局编辑器是 Emacs。项目专属的 LSP、编译器、SDK、formatter 应优先放到项目
+自己的 `flake.nix` 或 `devShell` 中。全局只保留通用的 Nix 和 shell 维护工具。
 
-The target desktop is Niri with Noctalia v5.
+## 桌面环境
 
-System-side Niri integration is in:
+目标桌面是 Niri + Noctalia v5。
+
+Niri 的系统级集成位于：
 
 ```text
 modules/system/desktop/niri.nix
 ```
 
-It enables Niri, GDM as the login manager, portal support, Wayland utilities,
-power/bluetooth-related services, and installs Noctalia from the official v5
-flake package:
+这里负责启用 Niri、GDM 登录管理器、portal、常用 Wayland 工具、
+power/bluetooth 相关服务，并从官方 v5 flake package 安装 Noctalia：
 
 ```nix
 inputs.noctalia.packages.${system}.default
 ```
 
-User-side Niri configuration is in:
+Niri 的用户级配置位于：
 
 ```text
 modules/home/desktop/niri.nix
 ```
 
-Niri starts Noctalia with the v5 command:
+Niri 启动时会用 v5 命令拉起 Noctalia：
 
 ```kdl
 spawn-at-startup "noctalia"
 ```
 
-Noctalia is installed by Nix, but its user settings are not managed by Home
-Manager. Configure Noctalia through its own UI or local config files.
+Noctalia 由 Nix 安装，但它的用户设置不由 Home Manager 管理。后续通过
+Noctalia 自己的 UI 或本地配置文件设置即可。
 
-GNOME Desktop is intentionally not enabled. GDM is kept only as the display
-manager so the Niri session can be selected at login.
+GNOME Desktop 有意不启用。当前保留 GDM 只是作为登录管理器，方便在登录界面选择
+Niri session。
 
-## Migration Rules
+## 迁移规则
 
-When migrating more files from the backup, classify them before adding them:
+继续从备份迁移内容时，先分类再加入仓库：
 
-- System boot, users, services, hardware, networking: `modules/system`.
-- Shell, terminal tools, editor config, user apps: `modules/home`.
-- Machine-specific values and temporary host exceptions: `hosts/nixos`.
-- Runtime state, caches, logs, sockets, histories: do not manage by default.
-- Tokens, credentials, private keys, cookies, password stores: never commit.
-- Project-specific LSPs, SDKs, compilers, and formatters: use project flakes.
+- 系统启动、用户、服务、硬件、网络：放入 `modules/system`。
+- shell、终端工具、编辑器配置、用户应用：放入 `modules/home`。
+- 单机特有配置和临时迁移例外：放入 `hosts/nixos`。
+- 运行时状态、缓存、日志、socket、history：默认不纳入管理。
+- token、credential、私钥、cookie、密码库：绝不提交。
+- 项目专属 LSP、SDK、编译器、formatter：放到项目 flake。
 
-Prefer semantic module names such as `cli/git.nix`, `desktop/fonts.nix`, or
-`services/pipewire.nix`. Avoid catch-all names like `misc.nix`.
+模块命名应使用语义名称，例如 `cli/git.nix`、`desktop/fonts.nix`、
+`services/pipewire.nix`。避免使用 `misc.nix` 这类无法表达边界的名字。
 
 ## Secrets
 
-The `modules/home/secrets` area only describes how local secret files may be
-sourced. It must not contain secret values.
+`modules/home/secrets` 只描述本地 secret 文件如何被 source，不存放 secret 明文。
 
-Current local hooks look for:
+当前本地 hook 会查找：
 
 ```text
 ~/.config/secrets/api-keys.bash
 ~/.config/secrets/api-keys.fish
 ```
 
-Those files are local machine state and should stay outside Git.
+这些文件属于本机状态，应留在 Git 外。
 
-## Notes
+## 备注
 
-`hardware-configuration.nix` is generated by `nixos-generate-config`. Keep it
-small and hardware-specific. If a setting is a reusable policy rather than
-hardware detection output, move it into a system module instead.
+`hardware-configuration.nix` 由 `nixos-generate-config` 生成。它应该保持小而专注，
+只放硬件和文件系统相关配置。如果某个设置是可复用策略，而不是硬件检测结果，就应
+移动到 `modules/system` 的对应模块中。
