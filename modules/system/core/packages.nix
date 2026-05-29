@@ -27,6 +27,7 @@ in
       usbutils
       gparted
       flclash
+      bubblewrap
     ];
 
     programs.firefox.enable = true;
