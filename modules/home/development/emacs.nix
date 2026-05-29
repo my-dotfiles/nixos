@@ -44,6 +44,7 @@ in
     home.packages = with pkgs; [
       nixd
       nixfmt-rfc-style
+      markdown-oxide
       ripgrep
       fd
     ];
@@ -156,12 +157,17 @@ in
       (setq xref-search-program 'ripgrep
             eglot-autoshutdown t
             eglot-events-buffer-size 0)
+      (add-to-list 'eglot-server-programs
+                   '((markdown-mode gfm-mode) . ("markdown-oxide")))
 
       (require 'nix-mode)
       (require 'markdown-mode)
       (add-hook 'nix-mode-hook #'eglot-ensure)
       (add-hook 'prog-mode-hook #'display-fill-column-indicator-mode)
       (add-hook 'prog-mode-hook #'hs-minor-mode)
+
+      (add-hook 'markdown-mode-hook #'eglot-ensure)
+      (add-hook 'gfm-mode-hook #'eglot-ensure)
 
       ;; Fast Jump
       (require 'avy)
@@ -173,7 +179,7 @@ in
       (require 'embark)
       (require 'embark-consult)
       (global-set-key (kbd "C-.") #'embark-act)
-      (global-set-key (kbd "C-,") #'embark-dwim)
+      ;; (global-set-key (kbd "C-,") #'embark-dwim)
       (global-set-key (kbd "C-h B") #'embark-bindings)
 
       (setq prefix-help-command #'embark-prefix-help-command)
