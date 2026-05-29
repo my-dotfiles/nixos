@@ -31,7 +31,7 @@ in
         window-save-state = "always";
         window-theme = "dark";
         window-width = 110;
-        theme = "Gruvbox Material";
+        theme = "Gruvbox Dark Hard";
       };
     };
   };

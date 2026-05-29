@@ -19,6 +19,7 @@ in
           cape
           consult
           corfu
+          doom-themes
           magit
           marginalia
           markdown-mode
@@ -58,6 +59,15 @@ in
 
       (set-language-environment "UTF-8")
       (prefer-coding-system 'utf-8)
+
+      ;; Gruvbox theme from doom-themes, without Doom Emacs or Evil.
+      (setq doom-themes-enable-bold t
+            doom-themes-enable-italic nil)
+      (if (require 'doom-themes nil t)
+          (progn
+            (load-theme 'doom-gruvbox t)
+            (doom-themes-org-config))
+        (load-theme 'wombat t))
 
       (menu-bar-mode -1)
       (when (display-graphic-p)
@@ -132,6 +142,19 @@ in
 
       ;;; init.el ends here
     '';
+
+    home.file.".emacs" = {
+      force = true;
+      text = ''
+        ;;; .emacs --- compatibility loader -*- lexical-binding: t; -*-
+
+        ;; Emacs loads ~/.emacs before ~/.emacs.d/init.el. Keep this file as a
+        ;; tiny Home Manager-managed shim so the real config is always loaded.
+        (load (expand-file-name "init.el" user-emacs-directory) nil t)
+
+        ;;; .emacs ends here
+      '';
+    };
 
     home.sessionVariables = {
       EDITOR = "emacs";
