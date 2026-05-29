@@ -27,6 +27,16 @@ in
           orderless
           vertico
           which-key
+
+          avy
+          embark
+          embark-consult
+          rainbow-delimiters
+          flycheck
+
+          nerd-icons
+          nerd-icons-completion
+          nerd-icons-dired
         ]
       );
     };
@@ -98,7 +108,11 @@ in
       ;; set cursor
       (setq-default cursor-type 'box)
       (blink-cursor-mode 1)
-      
+
+
+      ;; Use relative line numbers
+      (setq display-line-numbers-type 'relative)
+      (add-hook 'prog-mode-hook #'display-line-numbers-mode)
 
       ;; Minibuffer completion.
       (require 'vertico)
@@ -149,6 +163,37 @@ in
       (add-hook 'prog-mode-hook #'display-fill-column-indicator-mode)
       (add-hook 'prog-mode-hook #'hs-minor-mode)
 
+      ;; Fast Jump
+      (require 'avy)
+      (global-set-key (kbd "C-;") #'avy-goto-char-timer)
+      (global-set-key (kbd "M-g w") #'avy-goto-word-1)
+      (global-set-key (kbd "M-g l") #'avy-goto-line)
+
+      ;; Context actions for minibuffer
+      (require 'embark)
+      (require 'embark-consult)
+      (global-set-key (kbd "C-.") #'embark-act)
+      (global-set-key (kbd "C-,") #'embark-dwim)
+      (global-set-key (kbd "C-h B") #'embark-bindings)
+
+      (setq prefix-help-command #'embark-prefix-help-command)
+
+      (add-hook 'embark-collect-mode-hook #'consult-preview-at-point-mode)
+
+      (require 'rainbow-delimiters)
+      (add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
+
+      ;; nerd icons
+      (require 'nerd-icons)
+      (require 'nerd-icons-completion)
+      (require 'nerd-icons-dired)
+      (nerd-icons-completion-mode 1)
+      (add-hook 'marginalia-mode-hook #'nerd-icons-completion-marginalia-setup)
+      (add-hook 'dired-mode-hook #'nerd-icons-dired-mode)
+
+      (global-hl-line-mode 1)
+
+
       (add-to-list 'auto-mode-alist '("\\.nix\\'" . nix-mode))
       (add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
 
@@ -186,8 +231,8 @@ in
     };
 
     home.sessionVariables = {
-      EDITOR = "emacs";
-      VISUAL = "emacs";
+      EDITOR = "emacs -nw";
+      VISUAL = "emacs -nw";
     };
   };
 }
