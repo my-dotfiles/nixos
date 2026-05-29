@@ -43,6 +43,8 @@ in
 
       ;; This config keeps the normal Emacs editing model. Packages are provided
       ;; by Nix, so Emacs does not refresh archives or install packages at startup.
+      (setq package-enable-at-startup nil
+            package-quickstart nil)
 
       (setq inhibit-startup-screen t
             ring-bell-function 'ignore
@@ -61,13 +63,12 @@ in
       (prefer-coding-system 'utf-8)
 
       ;; Gruvbox theme from doom-themes, without Doom Emacs or Evil.
+      (require 'doom-themes)
       (setq doom-themes-enable-bold t
             doom-themes-enable-italic nil)
-      (if (require 'doom-themes nil t)
-          (progn
-            (load-theme 'doom-gruvbox t)
-            (doom-themes-org-config))
-        (load-theme 'wombat t))
+      (load-theme 'doom-gruvbox t)
+      (when (fboundp 'doom-themes-org-config)
+        (doom-themes-org-config))
 
       (menu-bar-mode -1)
       (when (display-graphic-p)
@@ -89,11 +90,16 @@ in
       (recentf-mode 1)
       (global-auto-revert-mode 1)
       (delete-selection-mode 1)
+      (require 'which-key)
       (which-key-mode 1)
 
       (setq-default truncate-lines t)
 
       ;; Minibuffer completion.
+      (require 'vertico)
+      (require 'marginalia)
+      (require 'orderless)
+      (require 'consult)
       (vertico-mode 1)
       (marginalia-mode 1)
       (setq completion-styles '(orderless basic)
@@ -106,9 +112,12 @@ in
       (global-set-key (kbd "M-g g") #'consult-goto-line)
       (global-set-key (kbd "C-c f") #'project-find-file)
       (global-set-key (kbd "C-c s") #'consult-ripgrep)
+      (require 'magit)
       (global-set-key (kbd "C-c g") #'magit-status)
 
       ;; In-buffer completion. Works well in terminal and GUI.
+      (require 'corfu)
+      (require 'cape)
       (global-corfu-mode 1)
       (setq corfu-auto t
             corfu-auto-delay 0.2
@@ -124,10 +133,13 @@ in
       (add-to-list 'completion-at-point-functions #'cape-dabbrev)
 
       ;; Built-in project and LSP support.
+      (require 'eglot)
       (setq xref-search-program 'ripgrep
             eglot-autoshutdown t
             eglot-events-buffer-size 0)
 
+      (require 'nix-mode)
+      (require 'markdown-mode)
       (add-hook 'nix-mode-hook #'eglot-ensure)
       (add-hook 'prog-mode-hook #'display-fill-column-indicator-mode)
       (add-hook 'prog-mode-hook #'hs-minor-mode)
@@ -141,6 +153,18 @@ in
         (load custom-file))
 
       ;;; init.el ends here
+    '';
+
+    home.file.".emacs.d/early-init.el".text = ''
+      ;;; early-init.el --- startup policy -*- lexical-binding: t; -*-
+
+      ;; Home Manager/Nix provides Emacs packages. Ignore old packages installed
+      ;; under ~/.emacs.d/elpa so they cannot shadow Nix-provided Magit,
+      ;; Transient, magit-section, Vertico, etc.
+      (setq package-enable-at-startup nil
+            package-quickstart nil)
+
+      ;;; early-init.el ends here
     '';
 
     home.file.".emacs" = {
