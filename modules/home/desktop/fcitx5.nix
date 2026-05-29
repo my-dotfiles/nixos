@@ -17,7 +17,7 @@ in
 
     xdg.configFile."fcitx5/profile".text = ''
       [Groups/0]
-      Name=Default
+      Name=默认
       Default Layout=us
       DefaultIM=pinyin
 
@@ -30,7 +30,7 @@ in
       Layout=
 
       [GroupOrder]
-      0=Default
+      0=默认
     '';
 
     xdg.configFile."fcitx5/config".text = ''
@@ -41,8 +41,14 @@ in
 
       [Hotkey/TriggerKeys]
 
+      [Hotkey/ActivateKeys]
+      0=Hangul_Hanja
+
+      [Hotkey/DeactivateKeys]
+      0=Hangul_Romaja
+
       [Hotkey/AltTriggerKeys]
-      0=Control_L
+      0=Control+Control_L
 
       [Hotkey/EnumerateForwardKeys]
       0=Control+backslash
