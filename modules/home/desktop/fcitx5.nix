@@ -117,8 +117,8 @@ in
       PreferTextIcon=False
       ShowLayoutNameInIcon=True
       UseInputMethodLanguageToDisplayText=True
-      Theme=breeze-opaque-dark-blue
-      DarkTheme=default-dark
+      Theme=mellow-graphite-dark
+      DarkTheme=mellow-graphite-dark
       UseDarkTheme=True
       UseAccentColor=True
       PerScreenDPI=False

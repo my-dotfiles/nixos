@@ -36,6 +36,7 @@ in
           waylandFrontend = true;
           addons = with pkgs; [
             emacs-pgtk
+            fcitx5-mellow-themes
             qt6Packages.fcitx5-chinese-addons
             fcitx5-gtk
             fcitx5-rime

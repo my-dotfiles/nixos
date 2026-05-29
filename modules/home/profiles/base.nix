@@ -8,6 +8,7 @@
     ../cli/fish.nix
     ../cli/git.nix
     ../cli/prompt.nix
+    ../cli/ssh.nix
     ../cli/terminal.nix
     ../cli/ghostty.nix
     ../cli/htop.nix
