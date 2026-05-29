@@ -15,6 +15,7 @@
     userName = "yurikon";
     userEmail = "h6606797@gmail.com";
   };
+  myHome.cli.github.enable = true;
   myHome.cli.prompt.enable = true;
   myHome.cli.ssh.enable = true;
   myHome.cli.terminal.enable = true;

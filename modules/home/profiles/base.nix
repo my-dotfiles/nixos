@@ -7,6 +7,7 @@
     ../core/xdg.nix
     ../cli/fish.nix
     ../cli/git.nix
+    ../cli/github.nix
     ../cli/prompt.nix
     ../cli/ssh.nix
     ../cli/terminal.nix

@@ -11,6 +11,16 @@ in
       enable = true;
       enableDefaultConfig = false;
       matchBlocks = {
+        "github.com" = {
+          hostname = "ssh.github.com";
+          user = "git";
+          port = 443;
+          identityFile = [ "~/.ssh/id_ed25519_new" ];
+          identitiesOnly = true;
+          serverAliveInterval = 30;
+          serverAliveCountMax = 3;
+        };
+
         macos = {
           hostname = "100.120.108.67";
           user = "yurikon";
