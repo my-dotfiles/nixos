@@ -12,13 +12,13 @@ in
       settings = {
         adjust-cell-height = "10%";
         background-blur-radius = 0;
-        bold-is-bright = false;
+        bold-is-bright = true;
         confirm-close-surface = false;
         cursor-style = "bar";
         font-family = "Maple Mono NF CN";
         font-style = "Medium";
         font-style-italic = "Medium Italic";
-        font-size = 12;
+        font-size = 13;
         gtk-single-instance = true;
         mouse-hide-while-typing = true;
         quick-terminal-position = "center";
