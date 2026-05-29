@@ -17,6 +17,7 @@
     };
 
     desktop.niri.enable = true;
+    desktop.thunar.enable = true;
 
     services = {
       openssh.enable = true;
