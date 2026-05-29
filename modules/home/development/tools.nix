@@ -25,6 +25,7 @@ in
       ++ optionalPkg [ "shfmt" ]
       ++ optionalPkg [ "shellcheck" ]
       ++ optionalPkg [ "statix" ]
-      ++ optionalPkg [ "deadnix" ];
+      ++ optionalPkg [ "deadnix" ]
+      ++ optionalPkg [ "markdown-oxide" ];
   };
 }
