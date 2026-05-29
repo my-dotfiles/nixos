@@ -16,6 +16,8 @@ in
         confirm-close-surface = false;
         cursor-style = "bar";
         font-family = "Maple Mono NF CN";
+        font-style = "Medium";
+        font-style-italic = "Medium Italic";
         font-size = 12;
         gtk-single-instance = true;
         mouse-hide-while-typing = true;

@@ -1,7 +1,16 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.myHome.cli.prompt;
+  starshipCfg = config.programs.starship;
+  gruvboxRainbowConfig = pkgs.runCommand "starship-gruvbox-rainbow.toml" { } ''
+    ${lib.getExe starshipCfg.package} preset gruvbox-rainbow > $out
+  '';
 in
 {
   options.myHome.cli.prompt.enable = lib.mkEnableOption "starship prompt";
@@ -11,7 +20,8 @@ in
       enable = true;
       enableBashIntegration = true;
       enableFishIntegration = true;
-      settings.add_newline = false;
     };
+
+    home.file.${starshipCfg.configPath}.source = gruvboxRainbowConfig;
   };
 }
