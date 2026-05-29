@@ -40,10 +40,12 @@ in
       ModifierOnlyKeyTimeout=251
 
       [Hotkey/TriggerKeys]
-      0=Super+Num_Lock
+
+      [Hotkey/AltTriggerKeys]
+      0=Control_L
 
       [Hotkey/EnumerateForwardKeys]
-      0=Control+space
+      0=Control+backslash
 
       [Hotkey/PrevCandidate]
       0=Shift+Tab
@@ -130,7 +132,6 @@ in
       Enabled=True
 
       [Hotkey]
-      0=Control+period
     '';
 
     xdg.configFile."fcitx5/conf/notifications.conf".text = ''
