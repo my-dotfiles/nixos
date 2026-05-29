@@ -18,9 +18,11 @@
   myHome.cli.prompt.enable = true;
   myHome.cli.terminal.enable = true;
   myHome.cli.ghostty.enable = true;
+  myHome.cli.htop.enable = true;
   myHome.cli.lazygit.enable = true;
   myHome.cli.tmux.enable = true;
   myHome.cli.glow.enable = true;
+  myHome.cli.yazi.enable = true;
 
   myHome.development.emacs.enable = true;
   myHome.development.tools.enable = true;
@@ -30,6 +32,7 @@
   myHome.desktop.fonts.enable = true;
   myHome.desktop.fcitx5.enable = true;
   myHome.desktop.mime.enable = true;
+  myHome.desktop.mpv.enable = true;
   myHome.desktop.niri.enable = true;
 
   myHome.secrets.localFiles.enable = true;

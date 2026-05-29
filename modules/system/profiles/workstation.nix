@@ -20,10 +20,12 @@
     desktop.thunar.enable = true;
 
     services = {
+      jellyfin.enable = true;
       openssh.enable = true;
       pipewire.enable = true;
       printing.enable = true;
       proxy.enable = true;
+      tailscale.enable = true;
       usbmuxd.enable = true;
     };
   };

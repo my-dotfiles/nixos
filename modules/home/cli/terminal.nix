@@ -18,9 +18,7 @@ in
       bat
       eza
       fzf
-      yazi
       jq
-      btop
       fastfetch
       tree
       unzip
