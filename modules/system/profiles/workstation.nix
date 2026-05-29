@@ -24,6 +24,7 @@
       pipewire.enable = true;
       printing.enable = true;
       proxy.enable = true;
+      usbmuxd.enable = true;
     };
   };
 }

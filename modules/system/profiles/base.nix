@@ -13,5 +13,6 @@
     ../services/pipewire.nix
     ../services/printing.nix
     ../services/proxy.nix
+    ../services/usbmuxd.nix
   ];
 }
