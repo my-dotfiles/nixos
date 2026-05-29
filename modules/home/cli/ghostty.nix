@@ -14,7 +14,8 @@ in
         background-blur-radius = 0;
         bold-is-bright = true;
         confirm-close-surface = false;
-        cursor-style = "bar";
+        cursor-style = "block";
+        cursor-style-blink = true;
         font-family = "Maple Mono NF CN";
         font-style = "Medium";
         font-style-italic = "Medium Italic";

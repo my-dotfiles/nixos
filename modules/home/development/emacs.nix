@@ -95,6 +95,11 @@ in
 
       (setq-default truncate-lines t)
 
+      ;; set cursor
+      (setq-default cursor-type 'box)
+      (blink-cursor-mode 1)
+      
+
       ;; Minibuffer completion.
       (require 'vertico)
       (require 'marginalia)
