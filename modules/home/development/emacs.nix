@@ -19,6 +19,7 @@ in
           cape
           consult
           corfu
+          corfu-terminal
           doom-themes
           magit
           marginalia
@@ -147,6 +148,11 @@ in
       (keymap-set corfu-map "TAB" #'corfu-next)
       (keymap-set corfu-map "<backtab>" #'corfu-previous)
       (keymap-set corfu-map "RET" #'corfu-insert)
+
+      ;; use corfu completion in terminal
+      (unless (display-graphic-p)
+        (require 'corfu-terminal)
+        (corfu-terminal-mode 1))
 
       (setq tab-always-indent 'complete)
 
