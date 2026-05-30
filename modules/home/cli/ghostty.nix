@@ -25,7 +25,6 @@ in
         quick-terminal-position = "center";
         shell-integration = "detect";
         term = "xterm-direct";
-        title = "Ghostty";
         unfocused-split-opacity = 0.5;
         wait-after-command = false;
         window-height = 32;
