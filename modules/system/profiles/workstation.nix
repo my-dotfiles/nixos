@@ -4,6 +4,8 @@
   imports = [
     ./base.nix
     ../desktop/niri.nix
+    ../desktop/nvidia.nix
+    ../desktop/steam.nix
   ];
 
   mySystem = {
@@ -17,7 +19,9 @@
     };
 
     desktop.niri.enable = true;
+    desktop.nvidia.enable = true;
     desktop.thunar.enable = true;
+    desktop.steam.enable = true;
 
     services = {
       jellyfin.enable = true;

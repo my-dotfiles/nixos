@@ -148,9 +148,16 @@ in
       (keymap-set corfu-map "<backtab>" #'corfu-previous)
       (keymap-set corfu-map "RET" #'corfu-insert)
 
+      (setq tab-always-indent 'complete)
+
       ;; Extra completion-at-point sources.
       (add-to-list 'completion-at-point-functions #'cape-file)
       (add-to-list 'completion-at-point-functions #'cape-dabbrev)
+
+      ;; corfu-popupinfo
+      (require 'corfu-popupinfo)
+      (corfu-popupinfo-mode 1)
+      (setq corfu-popupinfo-delay '(0.5 . 0.2))
 
       ;; Built-in project and LSP support.
       (require 'eglot)
