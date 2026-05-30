@@ -150,6 +150,7 @@ in
       (keymap-set corfu-map "RET" #'corfu-insert)
 
       ;; use corfu completion in terminal
+      (defvar corfu-terminal-mode nil)
       (unless (display-graphic-p)
         (require 'corfu-terminal)
         (corfu-terminal-mode 1))
