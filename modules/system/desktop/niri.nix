@@ -24,18 +24,6 @@ in
     };
 
     hardware.bluetooth.enable = true;
-
-    xdg.portal = {
-      enable = true;
-      config.niri = {
-        default = [ "gtk" ];
-        "org.freedesktop.impl.portal.FileChooser" = [ "gtk" ];
-      };
-      extraPortals = with pkgs; [
-        xdg-desktop-portal-gtk
-      ];
-    };
-
     environment.systemPackages =
       (with pkgs; [
         niri
