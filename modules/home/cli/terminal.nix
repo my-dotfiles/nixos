@@ -31,6 +31,8 @@ in
       dust
       tokei
       cloc
+      mdcat
+      pandoc
     ];
 
     programs.bash = {
