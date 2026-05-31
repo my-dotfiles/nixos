@@ -398,7 +398,7 @@ in
           Mod+Space hotkey-overlay-title="Noctalia: launcher" { spawn-sh "noctalia msg panel-toggle launcher"; }
           Mod+S hotkey-overlay-title="Noctalia: control center" { spawn-sh "noctalia msg panel-toggle control-center"; }
           Mod+Comma hotkey-overlay-title="Noctalia: settings" { spawn-sh "noctalia msg settings-toggle"; }
-          Super+Alt+L hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
+          Super+Alt+L hotkey-overlay-title="Lock the Screen" { spawn "lock-screen"; }
           Mod+E { spawn "thunar"; }
 
           // Use spawn-sh to run a shell command. Do this if you need pipes, multiple commands, etc.
