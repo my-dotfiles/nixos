@@ -44,7 +44,7 @@ in
 
     home.packages = with pkgs; [
       nixd
-      nixfmt-rfc-style
+      nixfmt
       markdown-oxide
       ripgrep
       fd

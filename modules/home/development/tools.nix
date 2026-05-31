@@ -21,7 +21,7 @@ in
     home.packages =
       optionalPkg [ "nil" ]
       ++ optionalPkg [ "nixd" ]
-      ++ optionalPkg [ "nixfmt-rfc-style" ]
+      ++ optionalPkg [ "nixfmt" ]
       ++ optionalPkg [ "shfmt" ]
       ++ optionalPkg [ "shellcheck" ]
       ++ optionalPkg [ "statix" ]
