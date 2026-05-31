@@ -34,6 +34,7 @@ in
           embark-consult
           rainbow-delimiters
           flycheck
+          yaml-mode
 
           nerd-icons
           nerd-icons-completion
@@ -46,6 +47,7 @@ in
       nixd
       nixfmt
       markdown-oxide
+      yaml-language-server
       ripgrep
       fd
     ];
@@ -173,15 +175,19 @@ in
             eglot-events-buffer-size 0)
       (add-to-list 'eglot-server-programs
                    '((markdown-mode gfm-mode) . ("markdown-oxide")))
+      (add-to-list 'eglot-server-programs
+                   '(yaml-mode . ("yaml-language-server" "--stdio")))
 
       (require 'nix-mode)
       (require 'markdown-mode)
+      (require 'yaml-mode)
       (add-hook 'nix-mode-hook #'eglot-ensure)
       (add-hook 'prog-mode-hook #'display-fill-column-indicator-mode)
       (add-hook 'prog-mode-hook #'hs-minor-mode)
 
       (add-hook 'markdown-mode-hook #'eglot-ensure)
       (add-hook 'gfm-mode-hook #'eglot-ensure)
+      (add-hook 'yaml-mode-hook #'eglot-ensure)
 
       ;; Fast Jump
       (require 'avy)
@@ -216,6 +222,7 @@ in
 
       (add-to-list 'auto-mode-alist '("\\.nix\\'" . nix-mode))
       (add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
+      (add-to-list 'auto-mode-alist '("\\.ya?ml\\'" . yaml-mode))
 
       ;; Keep custom.el separate from the generated init file.
       (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
