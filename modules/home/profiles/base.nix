@@ -24,6 +24,7 @@
     ../desktop/apps.nix
     ../desktop/fonts.nix
     ../desktop/fcitx5.nix
+    ../desktop/lockscreen.nix
     ../desktop/mime.nix
     ../desktop/mpv.nix
     ../desktop/niri.nix

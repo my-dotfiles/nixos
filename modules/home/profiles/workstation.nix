@@ -33,6 +33,7 @@
   myHome.desktop.apps.enable = true;
   myHome.desktop.fonts.enable = true;
   myHome.desktop.fcitx5.enable = true;
+  myHome.desktop.lockscreen.enable = true;
   myHome.desktop.mime.enable = true;
   myHome.desktop.mpv.enable = true;
   myHome.desktop.niri.enable = true;
