@@ -19,8 +19,8 @@ in
 
   config = lib.mkIf cfg.enable {
     home.packages =
-      optionalPkg "bitwarden-desktop"
-      ++ optionalPkg "file-roller"
+      # optionalPkg "bitwarden-desktop"
+      optionalPkg "file-roller"
       ++ optionalPkg "gnome-calculator"
       ++ optionalPkg "gnome-calendar"
       ++ optionalPkg "gnome-disk-utility"
