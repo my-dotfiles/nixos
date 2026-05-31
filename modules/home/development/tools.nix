@@ -26,6 +26,7 @@ in
       ++ optionalPkg [ "shellcheck" ]
       ++ optionalPkg [ "statix" ]
       ++ optionalPkg [ "deadnix" ]
-      ++ optionalPkg [ "markdown-oxide" ];
+      ++ optionalPkg [ "markdown-oxide" ]
+      ++ optionalPkg [ "yaml-language-server" ];
   };
 }
