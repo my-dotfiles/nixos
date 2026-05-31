@@ -37,5 +37,7 @@
   myHome.desktop.mpv.enable = true;
   myHome.desktop.niri.enable = true;
 
+  myHome.services.rclone.enable = true;
+
   myHome.secrets.localFiles.enable = true;
 }

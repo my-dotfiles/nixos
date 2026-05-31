@@ -27,6 +27,7 @@
     ../desktop/mime.nix
     ../desktop/mpv.nix
     ../desktop/niri.nix
+    ../services/rclone.nix
     ../secrets/local-files.nix
   ];
 }
