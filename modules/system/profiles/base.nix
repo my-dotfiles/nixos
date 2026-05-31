@@ -16,6 +16,7 @@
     ../services/printing.nix
     ../services/proxy.nix
     ../services/tailscale.nix
+    ../services/tinymediamanager.nix
     ../services/usbmuxd.nix
   ];
 }
