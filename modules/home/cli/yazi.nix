@@ -40,6 +40,7 @@ in
           max_height = 2000;
         };
       };
+      shellWrapperName = "y";
     };
   };
 }
