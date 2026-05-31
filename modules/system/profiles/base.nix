@@ -10,6 +10,7 @@
     ../core/users.nix
     ../desktop/thunar.nix
     ../services/jellyfin.nix
+    ../services/docker.nix
     ../services/openssh.nix
     ../services/pipewire.nix
     ../services/printing.nix

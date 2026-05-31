@@ -24,6 +24,7 @@
     desktop.steam.enable = true;
 
     services = {
+      docker.enable = true;
       jellyfin.enable = true;
       openssh.enable = true;
       pipewire.enable = true;
