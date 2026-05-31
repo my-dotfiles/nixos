@@ -31,7 +31,6 @@
       printing.enable = true;
       proxy.enable = true;
       tailscale.enable = true;
-      tinymediamanager.enable = true;
       usbmuxd.enable = true;
     };
   };
