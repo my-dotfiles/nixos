@@ -27,6 +27,7 @@ in
       ++ optionalPkg "gnome-system-monitor"
       ++ optionalPkg "libreoffice-fresh"
       ++ optionalPkg "loupe"
+      ++ optionalPkg "mediaelch"
       ++ optionalPkg "networkmanagerapplet"
       ++ optionalPkg "pavucontrol"
       ++ optionalPkg "papers"
