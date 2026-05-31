@@ -35,7 +35,7 @@ let
 
       Service = {
         Type = "simple";
-        Environment = "PATH=${lib.makeBinPath [ pkgs.fuse3 ]}";
+        Environment = "PATH=/run/wrappers/bin:${lib.makeBinPath [ pkgs.fuse3 ]}";
         ExecStartPre = "${lib.getExe' pkgs.coreutils "mkdir"} -p ${mount.mountPoint}";
         ExecStart = ''
           ${lib.getExe pkgs.rclone} mount ${mount.remote} ${mount.mountPoint} \
@@ -45,7 +45,7 @@ let
             --dir-cache-time 72h \
             --poll-interval 1m
         '';
-        ExecStop = "-${lib.getExe' pkgs.fuse3 "fusermount3"} -uz ${mount.mountPoint}";
+        ExecStop = "-/run/wrappers/bin/fusermount3 -uz ${mount.mountPoint}";
         Restart = "on-failure";
         RestartSec = "30s";
         TimeoutStopSec = "30s";
