@@ -10,7 +10,7 @@ in
     programs.ssh = {
       enable = true;
       enableDefaultConfig = false;
-      matchBlocks = {
+      settings = {
         "github.com" = {
           hostname = "ssh.github.com";
           user = "git";
@@ -24,10 +24,8 @@ in
         macos = {
           hostname = "100.120.108.67";
           user = "yurikon";
-          extraOptions = {
-            RequestTTY = "yes";
-            RemoteCommand = "TERM=xterm-256color exec $SHELL -l";
-          };
+          RequestTTY = "yes";
+          RemoteCommand = "TERM=xterm-256color exec $SHELL -l";
         };
       };
     };
