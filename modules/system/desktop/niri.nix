@@ -17,8 +17,11 @@ in
     programs.niri.enable = true;
 
     services = {
-      xserver.enable = true;
-      displayManager.gdm.enable = true;
+      greetd = {
+        enable = true;
+        useTextGreeter = true;
+        settings.default_session.command = "${lib.getExe pkgs.tuigreet} --time --remember --remember-session --sessions ${config.services.displayManager.sessionData.desktops}/share/wayland-sessions --cmd niri-session";
+      };
       upower.enable = true;
       power-profiles-daemon.enable = true;
     };
