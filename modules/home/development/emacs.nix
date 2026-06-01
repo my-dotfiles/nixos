@@ -34,6 +34,10 @@ in
           embark-consult
           rainbow-delimiters
           flycheck
+
+          tuareg
+          ocaml-eglot
+          
           yaml-mode
 
           nerd-icons
@@ -116,7 +120,6 @@ in
 
       ;; Use relative line numbers
       (setq display-line-numbers-type 'relative)
-      (add-hook 'prog-mode-hook #'display-line-numbers-mode)
 
       ;; Minibuffer completion.
       (require 'vertico)
@@ -152,7 +155,6 @@ in
       (keymap-set corfu-map "RET" #'corfu-insert)
 
       ;; use corfu completion in terminal
-      (defvar corfu-terminal-mode nil)
       (unless (display-graphic-p)
         (require 'corfu-terminal)
         (corfu-terminal-mode 1))
@@ -181,13 +183,22 @@ in
       (require 'nix-mode)
       (require 'markdown-mode)
       (require 'yaml-mode)
-      (add-hook 'nix-mode-hook #'eglot-ensure)
+      (require 'tuareg)
+      (require 'ocaml-eglot)
+
       (add-hook 'prog-mode-hook #'display-fill-column-indicator-mode)
       (add-hook 'prog-mode-hook #'hs-minor-mode)
 
+      ;; Start language servers automatically
       (add-hook 'markdown-mode-hook #'eglot-ensure)
       (add-hook 'gfm-mode-hook #'eglot-ensure)
       (add-hook 'yaml-mode-hook #'eglot-ensure)
+      (add-hook 'nix-mode-hook #'eglot-ensure)
+
+      ;; OCaml: Tuareg provides the major mode. OCaml-eglot adds the
+      ;; OCaml-specific LSP integration and starts Eglot afterwards.
+      (add-hook 'tuareg-mode-hook #'ocaml-eglot-mode)
+      (add-hook 'ocaml-eglot-mode-hook #'eglot-ensure)
 
       ;; Fast Jump
       (require 'avy)
