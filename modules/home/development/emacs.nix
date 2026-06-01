@@ -25,6 +25,7 @@ in
           marginalia
           markdown-mode
           nix-mode
+          org-roam
           orderless
           vertico
           which-key
@@ -37,7 +38,7 @@ in
 
           tuareg
           ocaml-eglot
-          
+
           yaml-mode
 
           nerd-icons
@@ -54,6 +55,7 @@ in
       yaml-language-server
       ripgrep
       fd
+      sqlite
     ];
 
     home.file.".emacs.d/init.el".text = ''
@@ -185,6 +187,30 @@ in
       (require 'yaml-mode)
       (require 'tuareg)
       (require 'ocaml-eglot)
+
+      ;; Org and org-roam.
+      (require 'org)
+      (setq org-directory (expand-file-name "org" (getenv "HOME"))
+            org-default-notes-file (expand-file-name "notes.org" org-directory))
+      (make-directory org-directory t)
+
+      (require 'org-roam)
+      (setq org-roam-directory (file-truename (expand-file-name "roam" org-directory))
+            org-roam-db-location (expand-file-name "org-roam.db" org-roam-directory)
+            org-roam-completion-everywhere t
+            org-roam-capture-templates
+            '(("d" "default" plain "%?"
+               :target (file+head "%<%Y%m%d%H%M%S>-''${slug}.org"
+                                  "#+title: ''${title}\n")
+               :unnarrowed t)))
+      (make-directory org-roam-directory t)
+      (org-roam-db-autosync-mode 1)
+
+      (global-set-key (kbd "C-c n f") #'org-roam-node-find)
+      (global-set-key (kbd "C-c n i") #'org-roam-node-insert)
+      (global-set-key (kbd "C-c n c") #'org-roam-capture)
+      (global-set-key (kbd "C-c n b") #'org-roam-buffer-toggle)
+      (global-set-key (kbd "C-c n r") #'org-roam-db-sync)
 
       (add-hook 'prog-mode-hook #'display-fill-column-indicator-mode)
       (add-hook 'prog-mode-hook #'hs-minor-mode)
