@@ -200,6 +200,11 @@ in
       (add-hook 'tuareg-mode-hook #'ocaml-eglot-mode)
       (add-hook 'ocaml-eglot-mode-hook #'eglot-ensure)
 
+      ;; Soft wrapping for prose buffers.
+      (add-hook 'markdown-mode-hook #'visual-line-mode)
+      (add-hook 'gfm-mode-hook #'visual-line-mode)
+      (add-hook 'org-mode-hook #'visual-line-mode)
+
       ;; Fast Jump
       (require 'avy)
       (global-set-key (kbd "C-;") #'avy-goto-char-timer)
