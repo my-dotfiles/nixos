@@ -21,6 +21,7 @@ in
         font-style-italic = "Medium Italic";
         font-size = 13;
         gtk-single-instance = true;
+        keybind = [ "ctrl+,=unbind" ];
         mouse-hide-while-typing = true;
         quick-terminal-position = "center";
         shell-integration = "detect";
