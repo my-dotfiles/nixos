@@ -190,12 +190,12 @@ in
 
       ;; Org and org-roam.
       (require 'org)
-      (setq org-directory (expand-file-name "org" (getenv "HOME"))
+      (setq org-directory "/home/yurikon/Learning/org-learning"
             org-default-notes-file (expand-file-name "notes.org" org-directory))
       (make-directory org-directory t)
 
       (require 'org-roam)
-      (setq org-roam-directory (file-truename (expand-file-name "roam" org-directory))
+      (setq org-roam-directory (file-truename org-directory)
             org-roam-db-location (expand-file-name "org-roam.db" org-roam-directory)
             org-roam-completion-everywhere t
             org-roam-capture-templates
