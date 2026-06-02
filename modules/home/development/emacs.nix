@@ -29,6 +29,7 @@ in
           orderless
           vertico
           which-key
+          htmlize
 
           avy
           embark
