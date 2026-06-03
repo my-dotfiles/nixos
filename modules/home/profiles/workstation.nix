@@ -40,5 +40,6 @@
 
   myHome.services.rclone.enable = true;
 
+  myHome.secrets.sops.enable = true;
   myHome.secrets.localFiles.enable = true;
 }

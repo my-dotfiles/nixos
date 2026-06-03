@@ -29,6 +29,7 @@
     ../desktop/mpv.nix
     ../desktop/niri.nix
     ../services/rclone.nix
+    ../secrets/sops.nix
     ../secrets/local-files.nix
   ];
 }
