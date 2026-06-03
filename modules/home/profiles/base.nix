@@ -21,6 +21,7 @@
     ../development/emacs.nix
     ../development/tools.nix
     ../development/codex.nix
+    ../development/pi.nix
     ../desktop/apps.nix
     ../desktop/fonts.nix
     ../desktop/fcitx5.nix
