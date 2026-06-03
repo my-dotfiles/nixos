@@ -280,7 +280,7 @@
 
 
 (require 'multiple-cursors)
-(setq mc/alawys-run-for-all t)
+(setq mc/always-run-for-all t)
 
 ;; Basic ms
 (global-set-key (kbd "C-c m l") #'mc/edit-lines)
