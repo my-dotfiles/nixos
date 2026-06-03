@@ -41,6 +41,7 @@ in
           package-lint
           elsa
           helpful
+          multiple-cursors
 
           tuareg
           ocaml-eglot

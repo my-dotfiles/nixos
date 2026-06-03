@@ -25,7 +25,7 @@
 ;; Gruvbox theme from doom-themes, without Doom Emacs or Evil.
 (require 'doom-themes)
 (setq doom-themes-enable-bold t
-      doom-themes-enable-italic nil)
+      doom-themes-enable-italic t)
 (load-theme 'doom-gruvbox t)
 (when (fboundp 'doom-themes-org-config)
   (doom-themes-org-config))
@@ -34,6 +34,9 @@
 (when (display-graphic-p)
   (tool-bar-mode -1)
   (scroll-bar-mode -1))
+
+;; Use relative line numbers
+(setq display-line-numbers-type 'relative)
 
 (global-display-line-numbers-mode 1)
 (dolist (hook '(term-mode-hook
@@ -58,9 +61,6 @@
 ;; set cursor
 (setq-default cursor-type 'box)
 (blink-cursor-mode 1)
-
-;; Use relative line numbers
-(setq display-line-numbers-type 'relative)
 
 ;; Minibuffer completion.
 (require 'vertico)
@@ -154,7 +154,6 @@
   "Configure local tooling for Emacs Lisp buffers."
   (setq-local indent-tabs-mode nil)
   (setq-local tab-width 2)
-  (eldoc-mode 1)
   (flycheck-mode 1)
   (keymap-local-set "C-c e e" #'yurikon/emacs-lisp-run-elsa))
 
@@ -233,6 +232,35 @@
 
 (require 'rainbow-delimiters)
 (add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
+
+
+(require 'multiple-cursors)
+(setq mc/alawys-run-for-all t)
+
+;; Basic ms
+(global-set-key (kbd "C-c m l") #'mc/edit-lines)
+(global-set-key (kbd "C-c m m") #'mc/mark-all-like-this)
+(global-set-key (kbd "C-c m n") #'mc/mark-next-like-this)
+(global-set-key (kbd "C-c m p") #'mc/mark-previous-like-this)
+(global-set-key (kbd "C-c m r") #'mc/mark-all-in-region)
+(global-set-key (kbd "C-c m d") #'mc/mark-all-symbols-like-this-in-defun)
+
+;; Symbol match
+(global-set-key (kbd "C-c m s") #'mc/mark-next-like-this-symbol)
+(global-set-key (kbd "C-c m S") #'mc/mark-all-symbols-like-this)
+
+;; Unmark select
+(global-set-key (kbd "C-c m u") #'mc/unmark-next-like-this)
+(global-set-key (kbd "C-c m U") #'mc/unmark-previous-like-this)
+(global-set-key (kbd "C-c m k") #'mc/skip-to-next-like-this)
+(global-set-key (kbd "C-c m K") #'mc/skip-to-previous-like-this)
+
+;; Batch edit multiple lines
+(global-set-key (kbd "C-c m b") #'mc/edit-beginnings-of-lines)
+(global-set-key (kbd "C-c m e") #'mc/edit-ends-of-lines)
+
+;; auto numbers
+(global-set-key (kbd "C-c m #") #'mc/insert-numbers)
 
 ;; nerd icons
 (require 'nerd-icons)
