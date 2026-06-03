@@ -13,7 +13,12 @@ in
 
   config = lib.mkIf cfg.enable {
     home.packages = with pkgs; [
-      nodejs_24
+      nodejs
+      bubblewrap
+      socat
+      ripgrep
+      nodejs
+      git
     ];
 
     home.file.".local/bin/pi-proxy" = {

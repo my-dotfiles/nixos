@@ -9,7 +9,7 @@ in
 
   config = lib.mkIf cfg.enable {
     home.packages = with pkgs; [
-      nodejs_24
+      nodejs
     ];
 
     home.file.".local/bin/codex-proxy" = {

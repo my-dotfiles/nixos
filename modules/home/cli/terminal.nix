@@ -14,6 +14,8 @@ in
   config = lib.mkIf cfg.enable {
     home.packages = with pkgs; [
       ripgrep
+      bubblewrap
+      socat
       fd
       bat
       eza
