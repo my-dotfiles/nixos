@@ -2,6 +2,7 @@
 
 ;; This config keeps the normal Emacs editing model. Packages are provided
 ;; by Nix, so Emacs does not refresh archives or install packages at startup.
+;;; Code
 (setq package-enable-at-startup nil
       package-quickstart nil)
 
