@@ -102,6 +102,49 @@
 
 (setq tab-always-indent 'complete)
 
+;; Prefer official tree-sitter major modes when Emacs provides them.
+(require 'treesit)
+(setq treesit-font-lock-level 4)
+
+(defun yurikon/add-major-mode-remap (from to)
+  "Remap FROM major mode to TO when TO is available."
+  (when (fboundp to)
+    (add-to-list 'major-mode-remap-alist (cons from to))))
+
+(defun yurikon/add-auto-mode (regexp mode)
+  "Use MODE for files matching REGEXP when MODE is available."
+  (when (fboundp mode)
+    (add-to-list 'auto-mode-alist (cons regexp mode))))
+
+(dolist (remap '((sh-mode . bash-ts-mode)
+                 (c-mode . c-ts-mode)
+                 (c++-mode . c++-ts-mode)
+                 (c-or-c++-mode . c-or-c++-ts-mode)
+                 (csharp-mode . csharp-ts-mode)
+                 (css-mode . css-ts-mode)
+                 (html-mode . html-ts-mode)
+                 (java-mode . java-ts-mode)
+                 (js-mode . js-ts-mode)
+                 (js-json-mode . json-ts-mode)
+                 (python-mode . python-ts-mode)
+                 (ruby-mode . ruby-ts-mode)
+                 (conf-toml-mode . toml-ts-mode)
+                 (yaml-mode . yaml-ts-mode)))
+  (yurikon/add-major-mode-remap (car remap) (cdr remap)))
+
+(dolist (entry '(("\\.json\\'" . json-ts-mode)
+                 ("\\.ya?ml\\'" . yaml-ts-mode)
+                 ("\\.toml\\'" . toml-ts-mode)
+                 ("\\.go\\'" . go-ts-mode)
+                 ("\\`go\\.mod\\'" . go-mod-ts-mode)
+                 ("\\.rs\\'" . rust-ts-mode)
+                 ("\\.ts\\'" . typescript-ts-mode)
+                 ("\\.tsx\\'" . tsx-ts-mode)
+                 ("\\(?:\\`\\|/\\)Dockerfile\\(?:\\..*\\)?\\'" . dockerfile-ts-mode)
+                 ("\\(?:\\`\\|/\\)CMakeLists\\.txt\\'" . cmake-ts-mode)
+                 ("\\.cmake\\'" . cmake-ts-mode)))
+  (yurikon/add-auto-mode (car entry) (cdr entry)))
+
 ;; Extra completion-at-point sources.
 (add-to-list 'completion-at-point-functions #'cape-file)
 (add-to-list 'completion-at-point-functions #'cape-dabbrev)
@@ -119,7 +162,7 @@
 (add-to-list 'eglot-server-programs
              '((markdown-mode gfm-mode) . ("markdown-oxide")))
 (add-to-list 'eglot-server-programs
-             '(yaml-mode . ("yaml-language-server" "--stdio")))
+             '((yaml-mode yaml-ts-mode) . ("yaml-language-server" "--stdio")))
 (add-to-list 'eglot-server-programs
              '((python-mode python-ts-mode)
                "basedpyright-langserver" "--stdio"))
@@ -195,8 +238,10 @@
 (add-hook 'markdown-mode-hook #'eglot-ensure)
 (add-hook 'gfm-mode-hook #'eglot-ensure)
 (add-hook 'yaml-mode-hook #'eglot-ensure)
+(add-hook 'yaml-ts-mode-hook #'eglot-ensure)
 (add-hook 'nix-mode-hook #'eglot-ensure)
 (add-hook 'python-mode-hook #'eglot-ensure)
+(add-hook 'python-ts-mode-hook #'eglot-ensure)
 
 ;; Python indentation
 (setq python-indent-offset 4

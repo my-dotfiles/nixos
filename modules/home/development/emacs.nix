@@ -28,6 +28,30 @@ in
           nix-mode
           org-roam
           orderless
+          (treesit-grammars.with-grammars (
+            grammars: with grammars; [
+              tree-sitter-bash
+              tree-sitter-c
+              tree-sitter-c-sharp
+              tree-sitter-cmake
+              tree-sitter-cpp
+              tree-sitter-css
+              tree-sitter-dockerfile
+              tree-sitter-go
+              tree-sitter-gomod
+              tree-sitter-html
+              tree-sitter-java
+              tree-sitter-javascript
+              tree-sitter-json
+              tree-sitter-python
+              tree-sitter-ruby
+              tree-sitter-rust
+              tree-sitter-toml
+              tree-sitter-tsx
+              tree-sitter-typescript
+              tree-sitter-yaml
+            ]
+          ))
           vertico
           which-key
           htmlize
