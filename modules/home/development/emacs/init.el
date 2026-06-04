@@ -58,6 +58,11 @@
 
 (setq-default truncate-lines t)
 
+;; Emacs runs as a daemon, so project-local tooling from direnv must be
+;; loaded per buffer instead of inherited from the original service process.
+(require 'envrc)
+(envrc-global-mode 1)
+
 ;; set cursor
 (setq-default cursor-type 'box)
 (blink-cursor-mode 1)

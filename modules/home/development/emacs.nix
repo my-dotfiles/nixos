@@ -59,6 +59,7 @@ in
           avy
           embark
           embark-consult
+          envrc
           rainbow-delimiters
           flycheck
           flycheck-package
