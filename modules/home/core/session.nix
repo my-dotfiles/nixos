@@ -18,8 +18,8 @@ in
 
     home.sessionVariables = {
       HERMES_TUI = "1";
-      EDITOR = "emacs -nw";
-      VISUAL = "emacs -nw";
+      EDITOR = lib.mkDefault "emacs -nw";
+      VISUAL = lib.mkDefault "emacs -nw";
       COLORTERM = "truecolor";
     };
   };

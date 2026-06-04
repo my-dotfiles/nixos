@@ -79,6 +79,12 @@ in
       );
     };
 
+    services.emacs = {
+      enable = true;
+      client.enable = true;
+      startWithUserSession = true;
+    };
+
     home.packages = with pkgs; [
       nixd
       nixfmt
@@ -109,8 +115,8 @@ in
     };
 
     home.sessionVariables = {
-      EDITOR = "emacs -nw";
-      VISUAL = "emacs -nw";
+      EDITOR = "emacsclient -t";
+      VISUAL = "emacsclient -t";
     };
   };
 }
