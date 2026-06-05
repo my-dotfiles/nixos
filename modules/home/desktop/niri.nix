@@ -129,7 +129,7 @@ in
       // https://niri-wm.github.io/niri/Configuration:-Layout
       layout {
           // Set gaps around windows in logical pixels.
-          gaps 16
+          gaps 8
 
           // When to center a column when changing focus, options are:
           // - "never", default behavior, focusing an off-screen column will keep at the left
@@ -177,7 +177,7 @@ in
               // off
 
               // How many logical pixels the ring extends out from the windows.
-              width 4
+              width 2
 
               // Colors can be set in a variety of ways:
               // - CSS named colors: "red"
@@ -326,16 +326,6 @@ in
       // Find more information on the wiki:
       // https://niri-wm.github.io/niri/Configuration:-Window-Rules
 
-      // Work around WezTerm's initial configure bug
-      // by setting an empty default-column-width.
-      window-rule {
-          // This regular expression is intentionally made as specific as possible,
-          // since this is the default config, and we want no false positives.
-          // You can get away with just app-id="wezterm" if you want.
-          geometry-corner-radius 20
-          clip-to-geometry true
-
-      }
       debug {
           honor-xdg-activation-with-invalid-serial
       }
@@ -394,7 +384,7 @@ in
           Mod+Shift+Slash { show-hotkey-overlay; }
 
           // Suggested binds for running programs: terminal, app launcher, screen locker.
-          Mod+T hotkey-overlay-title="Open a Terminal: ghostty" { spawn "ghostty"; }
+          Mod+T hotkey-overlay-title="Open a Terminal: alacritty" { spawn "alacritty"; }
           Mod+Space hotkey-overlay-title="Noctalia: launcher" { spawn-sh "noctalia msg panel-toggle launcher"; }
           Mod+S hotkey-overlay-title="Noctalia: control center" { spawn-sh "noctalia msg panel-toggle control-center"; }
           Mod+Comma hotkey-overlay-title="Noctalia: settings" { spawn-sh "noctalia msg settings-toggle"; }

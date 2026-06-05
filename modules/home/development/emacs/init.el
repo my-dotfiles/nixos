@@ -27,12 +27,70 @@
 (setq doom-themes-enable-bold t
       doom-themes-enable-italic t)
 (load-theme 'doom-gruvbox t)
-
-;; When running in a terminal, remove the default face background
-(unless (display-graphic-p)
-  (set-face-attribute 'default nil :background 'unspecified))
 (when (fboundp 'doom-themes-org-config)
   (doom-themes-org-config))
+
+(defconst yurikon/terminal-transparent-background-faces
+  '(default
+    cursor
+    fringe
+    header-line
+    highlight
+    hl-line
+    line-number
+    line-number-current-line
+    mode-line
+    mode-line-active
+    mode-line-inactive
+    tab-bar
+    tab-line
+    tab-line-tab
+    tab-line-tab-current
+    tab-line-tab-inactive
+    vertical-border
+    window-divider
+    window-divider-first-pixel
+    window-divider-last-pixel
+    corfu-default
+    corfu-bar
+    corfu-border
+    corfu-current
+    corfu-popupinfo
+    corfu-popupinfo-selection
+    org-block
+    org-block-begin-line
+    org-block-end-line
+    org-code
+    org-date
+    org-document-info
+    org-document-info-keyword
+    org-document-title
+    org-drawer
+    org-hide
+    org-indent
+    org-meta-line
+    org-property-value
+    org-quote
+    org-special-keyword
+    org-table
+    org-tag
+    org-verbatim)
+  "Faces whose theme backgrounds should not cover terminal transparency.")
+
+(defun yurikon/terminal-transparent-background (&optional frame)
+  "Let terminal FRAME inherit its terminal emulator's transparent background."
+  (let ((frame (or frame (selected-frame))))
+    (unless (display-graphic-p frame)
+      (dolist (face yurikon/terminal-transparent-background-faces)
+        (when (facep face)
+          (set-face-attribute face frame :background "unspecified-bg"))))))
+
+(yurikon/terminal-transparent-background)
+(add-hook 'after-make-frame-functions #'yurikon/terminal-transparent-background)
+(add-hook 'server-after-make-frame-hook #'yurikon/terminal-transparent-background)
+(advice-add 'load-theme :after
+            (lambda (&rest _)
+              (yurikon/terminal-transparent-background)))
 
 (menu-bar-mode -1)
 (when (display-graphic-p)
@@ -43,6 +101,7 @@
 (setq display-line-numbers-type 'relative)
 
 (global-display-line-numbers-mode 1)
+(yurikon/terminal-transparent-background)
 (dolist (hook '(term-mode-hook
                 shell-mode-hook
                 eshell-mode-hook

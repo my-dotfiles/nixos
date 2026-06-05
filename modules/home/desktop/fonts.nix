@@ -142,6 +142,14 @@ in
             <string>Sarasa Mono SC</string>
           </edit>
         </match>
+        <match target="pattern">
+          <test name="family" qual="any">
+            <string>Iosevka Nerd Font Mono</string>
+          </test>
+          <edit name="family" mode="append" binding="strong">
+            <string>Maple Mono NF CN</string>
+          </edit>
+        </match>
       </fontconfig>
     '';
   };
