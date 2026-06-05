@@ -12,7 +12,7 @@ in
       settings = {
         adjust-cell-height = "10%";
         background-blur-radius = 25;
-        background-opacity = 0.85;
+        background-opacity = 0.90;
         bold-is-bright = true;
         confirm-close-surface = false;
         cursor-style = "block";

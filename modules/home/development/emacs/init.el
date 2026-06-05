@@ -27,10 +27,6 @@
 (setq doom-themes-enable-bold t
       doom-themes-enable-italic t)
 (load-theme 'doom-gruvbox t)
-
-;; When running in a terminal, remove the default face background
-(unless (display-graphic-p)
-  (set-face-attribute 'default nil :background 'unspecified))
 (when (fboundp 'doom-themes-org-config)
   (doom-themes-org-config))
 
