@@ -55,6 +55,10 @@ in
       ++ optionalPkg [
         "nerd-fonts"
         "symbols-only"
+      ]
+      ++ optionalPkg [
+        "nerd-fonts"
+        "monaspace"
       ];
 
     xdg.configFile."fontconfig/fonts.conf".text = ''
@@ -110,6 +114,7 @@ in
         <alias>
           <family>monospace</family>
           <prefer>
+            <family>Monospace Neon</family>
             <family>Maple Mono NF CN</family>
             <family>JetBrainsMono Nerd Font</family>
             <family>Sarasa Mono SC</family>
