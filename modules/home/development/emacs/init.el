@@ -22,7 +22,10 @@
 (set-language-environment "UTF-8")
 (prefer-coding-system 'utf-8)
 
-(define-key input-decode-map "\e[1;5u" (kbd "C-,"))
+(require 'kkp)
+(add-hook 'tty-setup-hook #'global-kkp-mode)
+(unless (display-graphic-p)
+  (global-kkp-mode 1))
 
 ;; Gruvbox theme from doom-themes, without Doom Emacs or Evil.
 (require 'doom-themes)

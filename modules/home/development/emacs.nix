@@ -76,6 +76,8 @@ in
           nerd-icons
           nerd-icons-completion
           nerd-icons-dired
+
+          kkp
         ]
       );
     };
