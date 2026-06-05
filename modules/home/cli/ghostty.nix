@@ -11,8 +11,8 @@ in
       enable = true;
       settings = {
         adjust-cell-height = "10%";
-        background-blur-radius = 20;
-        background-opacity = 0.7;
+        background-blur-radius = 25;
+        background-opacity = 0.85;
         bold-is-bright = true;
         confirm-close-surface = false;
         cursor-style = "block";
