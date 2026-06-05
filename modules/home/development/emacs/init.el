@@ -22,6 +22,8 @@
 (set-language-environment "UTF-8")
 (prefer-coding-system 'utf-8)
 
+(define-key input-decode-map "\e[1;5u" (kbd "C-,"))
+
 ;; Gruvbox theme from doom-themes, without Doom Emacs or Evil.
 (require 'doom-themes)
 (setq doom-themes-enable-bold t
