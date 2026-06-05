@@ -143,6 +143,7 @@
 
 (global-set-key (kbd "C-s") #'consult-line)
 (global-set-key (kbd "C-x b") #'consult-buffer)
+(global-set-key (kbd "C-x C-b") #'ibuffer)
 (global-set-key (kbd "M-y") #'consult-yank-pop)
 (global-set-key (kbd "M-g g") #'consult-goto-line)
 (global-set-key (kbd "C-c f") #'project-find-file)
