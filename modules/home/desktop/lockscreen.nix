@@ -7,7 +7,7 @@
 
 let
   cfg = config.myHome.desktop.lockscreen;
-  wallpaper = "${config.home.homeDirectory}/Pictures/图片/wallpapers/Cartoon.png";
+  wallpaper = "${config.home.homeDirectory}/Pictures/图片/a_blue_and_orange_background.jpg";
 in
 {
   options.myHome.desktop.lockscreen.enable = lib.mkEnableOption "swaylock lock screen";
