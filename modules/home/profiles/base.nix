@@ -11,6 +11,7 @@
     ../cli/prompt.nix
     ../cli/ssh.nix
     ../cli/terminal.nix
+    ../cli/alacritty.nix
     ../cli/ghostty.nix
     ../cli/htop.nix
     ../cli/lazygit.nix
