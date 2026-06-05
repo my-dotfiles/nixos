@@ -16,7 +16,7 @@ in
         confirm-close-surface = false;
         cursor-style = "block";
         cursor-style-blink = true;
-        font-family = "Maple Mono NF CN";
+        font-family = "Iosevka Nerd Font Mono";
         font-style = "Medium";
         font-style-italic = "Medium Italic";
         font-size = 13;
