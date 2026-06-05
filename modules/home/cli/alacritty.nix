@@ -2,7 +2,6 @@
 
 let
   cfg = config.myHome.cli.alacritty;
-  ctrlComma = builtins.fromJSON ''"\u001b[1;5u"'';
 in
 {
   options.myHome.cli.alacritty.enable = lib.mkEnableOption "Alacritty terminal emulator";
@@ -18,13 +17,6 @@ in
           normal.family = "Iosevka Nerd Font Mono";
           offset.y = 1;
         };
-        keyboard.bindings = [
-          {
-            key = "Comma";
-            mods = "Control";
-            chars = ctrlComma;
-          }
-        ];
       };
     };
 
