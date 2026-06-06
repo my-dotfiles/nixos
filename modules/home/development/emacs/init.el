@@ -37,11 +37,8 @@
 
 (defconst yurikon/terminal-transparent-background-faces
   '(default
-    cursor
     fringe
     header-line
-    highlight
-    hl-line
     line-number
     line-number-current-line
     mode-line
@@ -59,9 +56,7 @@
     corfu-default
     corfu-bar
     corfu-border
-    corfu-current
     corfu-popupinfo
-    corfu-popupinfo-selection
     org-block
     org-block-begin-line
     org-block-end-line
@@ -96,6 +91,9 @@
 (advice-add 'load-theme :after
             (lambda (&rest _)
               (yurikon/terminal-transparent-background)))
+(dolist (feature '(corfu corfu-popupinfo))
+  (with-eval-after-load feature
+    (yurikon/terminal-transparent-background)))
 
 (menu-bar-mode -1)
 (when (display-graphic-p)
