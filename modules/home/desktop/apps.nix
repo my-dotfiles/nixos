@@ -38,6 +38,7 @@ in
       ++ optionalPkg "mission-center"
       ++ optionalPkg "thunderbird"
       ++ optionalPkg "thunar"
-      ++ optionalPkg "zotero";
+      ++ optionalPkg "zotero"
+      ++ optionalPkg "brave";
   };
 }
