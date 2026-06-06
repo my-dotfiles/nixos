@@ -43,7 +43,11 @@ let
             --cache-dir ${cacheDir} \
             --vfs-cache-mode writes \
             --dir-cache-time 72h \
-            --poll-interval 1m
+            --poll-interval 1m \
+            --contimeout 5s \
+            --timeout 15s \
+            --retries 1 \
+            --low-level-retries 1
         '';
         ExecStop = "-/run/wrappers/bin/fusermount3 -uz ${mount.mountPoint}";
         Restart = "on-failure";
@@ -51,11 +55,22 @@ let
         TimeoutStopSec = "30s";
       };
 
-      Install.WantedBy = [ "default.target" ];
+      Install.WantedBy = lib.optional cfg.autoStart "default.target";
     };
 in
 {
-  options.myHome.services.rclone.enable = lib.mkEnableOption "rclone cloud storage mounts";
+  options.myHome.services.rclone = {
+    enable = lib.mkEnableOption "rclone cloud storage mounts";
+
+    autoStart = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Automatically start rclone FUSE mounts at login. Leave disabled to avoid
+        file managers blocking while probing unavailable remote mounts.
+      '';
+    };
+  };
 
   config = lib.mkIf cfg.enable {
     home.packages = with pkgs; [
