@@ -154,6 +154,20 @@
 (require 'magit)
 (global-set-key (kbd "C-c g") #'magit-status)
 
+(defun yurikon/wl-copy-region (beg end)
+  "Copy the active region to the Wayland clipboard with wl-copy."
+  (interactive "r")
+  (unless (use-region-p)
+    (user-error "No active region"))
+  (let ((coding-system-for-write 'utf-8-unix))
+    (unless (zerop (call-process-region beg end "wl-copy" nil nil nil
+                                        "--type" "text/plain"))
+      (user-error "wl-copy failed")))
+  (deactivate-mark)
+  (message "Copied region to Wayland clipboard"))
+
+(global-set-key (kbd "C-c w") #'yurikon/wl-copy-region)
+
 ;; In-buffer completion. Works well in terminal and GUI.
 (require 'corfu)
 (require 'cape)
