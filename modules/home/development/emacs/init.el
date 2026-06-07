@@ -23,7 +23,7 @@
 (prefer-coding-system 'utf-8)
 
 (add-to-list 'default-frame-alist '(font . "Iosevka Nerd Font Mono-13"))
-(add-to-list 'default-frame-alist '(alpha-background . 95))
+(add-to-list 'default-frame-alist '(alpha-background . 90))
 (add-to-list 'default-frame-alist '(tool-bar-lines . 0))
 (add-to-list 'default-frame-alist '(vertical-scroll-bars . nil))
 (add-to-list 'default-frame-alist '(horizontal-scroll-bars . nil))
@@ -37,7 +37,7 @@
 (require 'doom-themes)
 (setq doom-themes-enable-bold t
       doom-themes-enable-italic t)
-(load-theme 'doom-ir-black t)
+(load-theme 'doom-material-dark t)
 (when (fboundp 'doom-themes-org-config)
   (doom-themes-org-config))
 
