@@ -33,13 +33,7 @@
 (unless (display-graphic-p)
   (global-kkp-mode 1))
 
-;; Theme from doom-themes, without Doom Emacs or Evil.
-(require 'doom-themes)
-(setq doom-themes-enable-bold t
-      doom-themes-enable-italic t)
-(load-theme 'doom-molokai t)
-(when (fboundp 'doom-themes-org-config)
-  (doom-themes-org-config))
+(load-theme 'gruvbox-dark-hard t)
 
 (defconst yurikon/terminal-transparent-background-faces
   '(default
