@@ -27,13 +27,9 @@
 (add-to-list 'default-frame-alist '(tool-bar-lines . 0))
 (add-to-list 'default-frame-alist '(vertical-scroll-bars . nil))
 (add-to-list 'default-frame-alist '(horizontal-scroll-bars . nil))
-(defconst my/cjk-font
-  (font-spec :family "Maple Mono NF CN"
-             :weight 'semi-bold
-             :size 13.0))
+(set-fontset-font t 'han "Noto Sans Mono CJK SC")
+(set-fontset-font t 'cjk-misc "Noto Sans Mono CJK SC")
 
-(set-fontset-font t 'han my/cjk-font)
-(set-fontset-font t 'cjk-misc my/cjk-font)
 
 (require 'kkp)
 (add-hook 'tty-setup-hook #'global-kkp-mode)
