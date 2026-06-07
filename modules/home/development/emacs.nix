@@ -89,6 +89,15 @@ in
       startWithUserSession = true;
     };
 
+    systemd.user.services.emacs.Service.Environment = [
+      "GTK_IM_MODULE=fcitx"
+      "QT_IM_MODULE=fcitx"
+      "XMODIFIERS=@im=fcitx"
+      "INPUT_METHOD=fcitx"
+      "SDL_IM_MODULE=fcitx"
+      "LC_CTYPE=zh_CN.UTF-8"
+    ];
+
     home.packages = with pkgs; [
       nixd
       nixfmt
