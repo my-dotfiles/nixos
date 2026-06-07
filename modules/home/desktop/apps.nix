@@ -39,6 +39,7 @@ in
       ++ optionalPkg "thunderbird"
       ++ optionalPkg "thunar"
       ++ optionalPkg "zotero"
-      ++ optionalPkg "brave";
+      ++ optionalPkg "brave"
+      ++ optionalPkg "prismlauncher";
   };
 }
