@@ -27,8 +27,13 @@
 (add-to-list 'default-frame-alist '(tool-bar-lines . 0))
 (add-to-list 'default-frame-alist '(vertical-scroll-bars . nil))
 (add-to-list 'default-frame-alist '(horizontal-scroll-bars . nil))
-(set-fontset-font t 'han "Maple Mono NF CN")
-(set-fontset-font t 'cjk-misc "Maple Mono NF CN")
+(defconst my/cjk-font
+  (font-spec :family "Maple Mono NF CN"
+             :weight 'semi-bold
+             :size 13.0))
+
+(set-fontset-font t 'han my/cjk-font)
+(set-fontset-font t 'cjk-misc my/cjk-font)
 
 (require 'kkp)
 (add-hook 'tty-setup-hook #'global-kkp-mode)
@@ -136,7 +141,7 @@
 
 ;; set cursor
 (setq-default cursor-type 'box)
-(blink-cursor-mode 1)
+(blink-cursor-mode 0)
 
 ;; Minibuffer completion.
 (require 'vertico)
