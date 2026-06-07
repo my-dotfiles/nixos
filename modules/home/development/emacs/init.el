@@ -22,7 +22,7 @@
 (set-language-environment "UTF-8")
 (prefer-coding-system 'utf-8)
 
-(add-to-list 'default-frame-alist '(font . "Iosevka Nerd Font Mono-13"))
+(add-to-list 'default-frame-alist '(font . "Iosevka Nerd Font Mono:style=Medium:size=13"))
 (add-to-list 'default-frame-alist '(alpha-background . 95))
 
 (require 'kkp)
@@ -30,11 +30,11 @@
 (unless (display-graphic-p)
   (global-kkp-mode 1))
 
-;; Gruvbox theme from doom-themes, without Doom Emacs or Evil.
+;; Theme from doom-themes, without Doom Emacs or Evil.
 (require 'doom-themes)
 (setq doom-themes-enable-bold t
       doom-themes-enable-italic t)
-(load-theme 'doom-gruvbox t)
+(load-theme 'doom-tokyo-night t)
 (when (fboundp 'doom-themes-org-config)
   (doom-themes-org-config))
 
