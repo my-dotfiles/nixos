@@ -27,8 +27,8 @@
 (add-to-list 'default-frame-alist '(tool-bar-lines . 0))
 (add-to-list 'default-frame-alist '(vertical-scroll-bars . nil))
 (add-to-list 'default-frame-alist '(horizontal-scroll-bars . nil))
-(set-fontset-font t 'han "Noto Sans Mono CJK SC")
-(set-fontset-font t 'cjk-misc "Noto Sans Mono CJK SC")
+;; (set-fontset-font t 'han "Noto Sans Mono CJK SC")
+;; (set-fontset-font t 'cjk-misc "Noto Sans Mono CJK SC")
 
 
 (require 'kkp)
