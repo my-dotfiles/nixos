@@ -37,7 +37,7 @@
 (require 'doom-themes)
 (setq doom-themes-enable-bold t
       doom-themes-enable-italic t)
-(load-theme 'doom-material-dark t)
+(load-theme 'doom-molokai t)
 (when (fboundp 'doom-themes-org-config)
   (doom-themes-org-config))
 
