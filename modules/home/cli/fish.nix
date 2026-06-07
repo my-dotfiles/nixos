@@ -32,7 +32,8 @@ in
         "..." = "cd ../..";
         c = "clear";
         g = "git";
-        e = "emacsclient -t";
+        e = "emacsclient -c -a emacs";
+        et = "emacsclient -t";
         hmconfig = "$EDITOR ~/nixos-config/home.nix";
       };
 

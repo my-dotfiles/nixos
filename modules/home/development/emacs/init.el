@@ -1,4 +1,4 @@
-;;; init.el --- Small terminal-first Emacs configuration -*- lexical-binding: t; -*-
+;;; init.el --- Small GUI-first Emacs configuration -*- lexical-binding: t; -*-
 
 ;; This config keeps the normal Emacs editing model. Packages are provided
 ;; by Nix, so Emacs does not refresh archives or install packages at startup.
@@ -21,6 +21,9 @@
 
 (set-language-environment "UTF-8")
 (prefer-coding-system 'utf-8)
+
+(add-to-list 'default-frame-alist '(font . "Iosevka Nerd Font Mono-13"))
+(add-to-list 'default-frame-alist '(alpha-background . 90))
 
 (require 'kkp)
 (add-hook 'tty-setup-hook #'global-kkp-mode)
