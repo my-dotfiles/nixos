@@ -24,6 +24,9 @@
 
 (add-to-list 'default-frame-alist '(font . "Iosevka Nerd Font Mono-13"))
 (add-to-list 'default-frame-alist '(alpha-background . 95))
+(add-to-list 'default-frame-alist '(tool-bar-lines . 0))
+(add-to-list 'default-frame-alist '(vertical-scroll-bars . nil))
+(add-to-list 'default-frame-alist '(horizontal-scroll-bars . nil))
 
 (require 'kkp)
 (add-hook 'tty-setup-hook #'global-kkp-mode)
@@ -99,8 +102,9 @@
     (yurikon/terminal-transparent-background)))
 
 (menu-bar-mode -1)
-(when (display-graphic-p)
-  (tool-bar-mode -1)
+(when (fboundp 'tool-bar-mode)
+  (tool-bar-mode -1))
+(when (fboundp 'scroll-bar-mode)
   (scroll-bar-mode -1))
 
 ;; Use relative line numbers
