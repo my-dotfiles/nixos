@@ -47,8 +47,8 @@ in
         "..." = "cd ../..";
         c = "clear";
         g = "git";
-        e = "emacsclient -c -a emacs";
-        et = "emacsclient -t";
+        e = "emacsclient -n -c -a emacs";
+        et = "emacsclient -t -a emacs";
         hmconfig = "$EDITOR ~/nixos-config/home.nix";
         reload = "source ~/.bashrc";
       };
