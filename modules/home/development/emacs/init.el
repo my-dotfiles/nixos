@@ -27,6 +27,8 @@
 (add-to-list 'default-frame-alist '(tool-bar-lines . 0))
 (add-to-list 'default-frame-alist '(vertical-scroll-bars . nil))
 (add-to-list 'default-frame-alist '(horizontal-scroll-bars . nil))
+(set-fontset-font t 'han "Maple Mono NF CN")
+(set-fontset-font t 'cjk-misc "Maple Mono NF CN")
 
 (require 'kkp)
 (add-hook 'tty-setup-hook #'global-kkp-mode)
