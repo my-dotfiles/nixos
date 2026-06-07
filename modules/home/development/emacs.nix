@@ -119,8 +119,8 @@ in
     };
 
     home.sessionVariables = {
-      EDITOR = "emacsclient -t";
-      VISUAL = "emacsclient -t";
+      EDITOR = "emacsclient -c -a emacs";
+      VISUAL = "emacsclient -c -a emacs";
     };
   };
 }
