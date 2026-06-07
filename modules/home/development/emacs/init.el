@@ -35,6 +35,8 @@
 (unless (display-graphic-p)
   (global-kkp-mode 1))
 
+(add-to-list 'custom-theme-load-path
+             (file-name-directory (locate-library "gruvbox-dark-hard-theme")))
 (load-theme 'gruvbox-dark-hard t)
 
 (defconst yurikon/terminal-transparent-background-faces

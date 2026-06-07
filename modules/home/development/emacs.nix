@@ -21,7 +21,6 @@ in
           consult
           corfu
           corfu-terminal
-          doom-themes
           gruvbox-theme
           magit
           marginalia
