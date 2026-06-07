@@ -22,7 +22,7 @@
 (set-language-environment "UTF-8")
 (prefer-coding-system 'utf-8)
 
-(add-to-list 'default-frame-alist '(font . "Iosevka Nerd Font Mono:style=Medium:size=13"))
+(add-to-list 'default-frame-alist '(font . "Iosevka Nerd Font Mono-13"))
 (add-to-list 'default-frame-alist '(alpha-background . 95))
 
 (require 'kkp)
@@ -34,7 +34,7 @@
 (require 'doom-themes)
 (setq doom-themes-enable-bold t
       doom-themes-enable-italic t)
-(load-theme 'doom-tokyo-night t)
+(load-theme 'doom-gruvbox t)
 (when (fboundp 'doom-themes-org-config)
   (doom-themes-org-config))
 
