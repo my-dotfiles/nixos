@@ -95,7 +95,7 @@ in
     };
 
     systemd.user.services.emacs.Service.Environment = [
-      "GTK_IM_MODULE=fcitx"
+      "GTK_IM_MODULE="
       "QT_IM_MODULE=fcitx"
       "XMODIFIERS=@im=fcitx"
       "INPUT_METHOD=fcitx"
