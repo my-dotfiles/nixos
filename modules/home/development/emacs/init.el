@@ -27,8 +27,8 @@
 (add-to-list 'default-frame-alist '(tool-bar-lines . 0))
 (add-to-list 'default-frame-alist '(vertical-scroll-bars . nil))
 (add-to-list 'default-frame-alist '(horizontal-scroll-bars . nil))
-(set-fontset-font t 'han (font-spec :family "Maple Mono NF CN" :size 16))
-(set-fontset-font t 'cjk-misc (font-spec :family "Maple Mono NF CN" :size 16))
+(set-fontset-font t 'han "Maple Mono NF CN")
+(set-fontset-font t 'cjk-misc "Maple Mono NF CN")
 
 
 (require 'kkp)
