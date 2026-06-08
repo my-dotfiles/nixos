@@ -27,10 +27,24 @@
 (add-to-list 'default-frame-alist '(tool-bar-lines . 0))
 (add-to-list 'default-frame-alist '(vertical-scroll-bars . nil))
 (add-to-list 'default-frame-alist '(horizontal-scroll-bars . nil))
-(dolist (charset '(han cjk-misc kana bopomofo))
-  (set-fontset-font t charset
-                    (font-spec :family "Maple Mono NF CN")
-                    nil 'prepend))
+
+(defun yurikon/apply-gui-fonts (&optional frame)
+  "Apply GUI fonts to FRAME after it has been created."
+  (let ((frame (or frame (selected-frame))))
+    (when (display-graphic-p frame)
+      (with-selected-frame frame
+        (set-frame-font "Iosevka Nerd Font Mono-13" nil t)
+        (dolist (charset '(kana han cjk-misc bopomofo))
+          (set-fontset-font t charset
+                            (font-spec :family "Maple Mono NF CN" :size 16)))))))
+
+(defun yurikon/apply-gui-fonts-later (&optional frame)
+  "Apply GUI fonts after FRAME finishes toolkit initialization."
+  (run-at-time 0 nil #'yurikon/apply-gui-fonts frame))
+
+(yurikon/apply-gui-fonts)
+(add-hook 'after-make-frame-functions #'yurikon/apply-gui-fonts-later)
+(add-hook 'server-after-make-frame-hook #'yurikon/apply-gui-fonts-later)
 
 (require 'kkp)
 (add-hook 'tty-setup-hook #'global-kkp-mode)
