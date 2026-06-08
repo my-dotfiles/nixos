@@ -22,6 +22,7 @@ in
           corfu
           corfu-terminal
           gruvbox-theme
+          ef-themes
           magit
           marginalia
           markdown-mode
