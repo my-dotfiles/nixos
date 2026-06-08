@@ -54,7 +54,7 @@
 (dolist (theme-library '("gruvbox-dark-hard-theme" "ef-themes"))
   (add-to-list 'custom-theme-load-path
                (file-name-directory (locate-library theme-library))))
-(load-theme 'gruvbox-dark-hard t)
+(load-theme 'ef-owl t)
 
 (defconst yurikon/terminal-transparent-background-faces
   '(default
