@@ -81,7 +81,7 @@ in
           kkp
 
           mu4e
-          org-mine
+          org-mime
         ]
       );
     };

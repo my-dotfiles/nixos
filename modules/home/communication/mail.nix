@@ -6,7 +6,7 @@ let
   pass = name: "cat ${config.sops.secrets.${name}.path}";
 in
 {
-  option.myHome.communication.mail.enable =
+  options.myHome.communication.mail.enable =
     lib.mkEnableOption "Emacs mu4e mail frontend";
 
   config = lib.mkIf cfg.enable {
@@ -54,7 +54,7 @@ in
     };
     services.mbsync = {
       enable = true;
-      frequency = "*;0/10";
+      frequency = "*-*-* *:0/10:00";
       postExec = "${pkgs.mu}/bin/mu index";
     };
   };
