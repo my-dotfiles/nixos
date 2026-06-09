@@ -33,5 +33,6 @@
     ../services/rclone.nix
     ../secrets/sops.nix
     ../secrets/local-files.nix
+    ../communication/mail.nix
   ];
 }
