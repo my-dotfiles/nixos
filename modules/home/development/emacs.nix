@@ -79,6 +79,9 @@ in
           nerd-icons-dired
 
           kkp
+
+          mu4e
+          org-mine
         ]
       );
     };

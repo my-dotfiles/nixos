@@ -431,6 +431,30 @@
 (add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
 (add-to-list 'auto-mode-alist '("\\.ya?ml\\'" . yaml-mode))
 
+;; use mu4e for mail frontend
+(require 'mu4e)
+(setq mail-user-agent 'mu4e-user-agent)
+(setq mu4e-maildir "~/Mail")
+(setq mu4e-get-mail-command "mbsync -a")
+(setq mu4e-update-interval 600)
+(setq mu4e-change-filenames-when-movin t)
+
+(setq message-send-mail-function 'message-send-mail-with-sendmail)
+(setq sendmail-program "msmtp")
+(setq message-sendmail-extra-arguments '("--read-envelope-fom"))
+(setq message-sendmail-f-is-evil t)
+(setq message-kill-buffer-on-exit t)
+
+(setq mu4e-contexts
+      (list
+       make-mu4e-context
+       :name "gmail"
+       :match-func (lambda (msg)
+                     (when msg
+                       (string-prefix-p "/gmail" (mu4e-message-field msg :maildir))))
+       :vars '((user-mail-address . "h6606797@gmail.com")
+               (user-full-name . "Yurikon"))))
+
 ;; Keep custom.el separate from the generated init file.
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (when (file-exists-p custom-file)

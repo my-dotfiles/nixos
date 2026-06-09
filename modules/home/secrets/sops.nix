@@ -14,7 +14,13 @@ in
     sops = {
       age.keyFile = "${config.xdg.configHome}/sops/age/keys.txt";
       defaultSopsFile = ../../../secrets/user.yaml;
-      secrets.openrouter-api-key = { };
+      secrets = {
+        openrouter-api-key = { };
+        mail-gmail-passwd = { };
+        mail-icloud-passwd = { };
+        mail-qq-passwd = { };
+        mail-163-passwd = { };
+      };
     };
 
     xdg.configFile."secrets/api-keys.fish".text = ''

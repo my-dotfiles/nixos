@@ -43,4 +43,6 @@
 
   myHome.secrets.sops.enable = true;
   myHome.secrets.localFiles.enable = true;
+
+  myHome.communication.mail.enable = true;
 }
