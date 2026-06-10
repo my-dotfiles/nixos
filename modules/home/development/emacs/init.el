@@ -438,22 +438,52 @@
 (setq mu4e-get-mail-command "mbsync -a")
 (setq mu4e-update-interval 600)
 (setq mu4e-change-filenames-when-movin t)
+(setq mu4e-view-open-program "xdg-open")
+(setq mu4e-attachment-dir "~/Downloads")
+
+(require 'mailcap)
+(setq mailcap-user-mime-data
+      '(("application/pdf" (viewer . "xdg-open %s") (type . "application/pdf"))
+        ("application/octet-stream" (viewer . "xdg-open %s") (type . "application/octet-stream"))
+        ("application/zip" (viewer . "xdg-open %s") (type . "application/zip"))
+        ("application/vnd.*" (viewer . "xdg-open %s") (type . "application/vnd.*"))
+        ("image/.*" (viewer . "xdg-open %s") (type . "image/.*"))))
+(mailcap-parse-mailcaps)
+(dolist (mime-type '("application/pdf"
+                     "application/octet-stream"
+                     "application/zip"
+                     "application/vnd.*"))
+  (setq mm-inlined-types (delete mime-type mm-inlined-types)))
 
 (setq message-send-mail-function 'message-send-mail-with-sendmail)
 (setq sendmail-program "msmtp")
-(setq message-sendmail-extra-arguments '("--read-envelope-fom"))
+(setq message-sendmail-extra-arguments '("--read-envelope-from"))
 (setq message-sendmail-f-is-evil t)
 (setq message-kill-buffer-on-exit t)
 
 (setq mu4e-contexts
       (list
-       make-mu4e-context
+      (make-mu4e-context
        :name "gmail"
        :match-func (lambda (msg)
                      (when msg
                        (string-prefix-p "/gmail" (mu4e-message-field msg :maildir))))
        :vars '((user-mail-address . "h6606797@gmail.com")
-               (user-full-name . "Yurikon"))))
+               (user-full-name . "Yurikon")))
+      (make-mu4e-context
+       :name "qq"
+       :match-func (lambda (msg)
+                     (when msg
+                       (string-prefix-p "/qq" (mu4e-message-field msg :maildir))))
+       :vars '((user-mail-address . "3166701497@qq.com")
+               (user-full-name . "郑彦文")))
+      (make-mu4e-context
+       :name "163"
+       :match-func (lambda (msg)
+                     (when msg
+                       (string-prefix-p "/netease163" (mu4e-message-field msg :maildir))))
+       :vars '((user-mail-address . "yuriisbest@163.com")
+               (user-full-name . "Yurikon")))))
 
 ;; Keep custom.el separate from the generated init file.
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
