@@ -39,6 +39,7 @@ in
       ++ optionalPkg "thunderbird"
       ++ optionalPkg "thunar"
       ++ optionalPkg "zotero"
-      ++ optionalPkg "prismlauncher";
+      ++ optionalPkg "prismlauncher"
+      ++ optionalPkg "google-chrome";
   };
 }
