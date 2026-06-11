@@ -274,6 +274,12 @@
 (add-to-list 'eglot-server-programs
              '((python-mode python-ts-mode)
                "basedpyright-langserver" "--stdio"))
+(add-to-list 'eglot-server-programs
+             '((c-mode c-ts-mode c++-mode c++-ts-mode c-or-c++-mode c-or-c++-ts-mode)
+               . ("clangd"
+                  "--background-index"
+                  "--clang-tidy"
+                  "--query-driver=/nix/store/**/bin/clang,/nix/store/**/bin/clang++,/nix/store/**/bin/gcc,/nix/store/**/bin/g++")))
 
 (require 'nix-mode)
 (require 'markdown-mode)
@@ -352,6 +358,25 @@
 (add-hook 'python-ts-mode-hook #'eglot-ensure)
 (add-hook 'typescript-ts-mode #'eglot-ensure)
 (add-hook 'tsx-ts-mode #'eglot-ensure)
+
+(defun yurikon/eglot-ensure-after-envrc ()
+  "Refresh direnv for the current buffer before starting Eglot.
+
+This matters for daemon Emacs: project-local tools from a Nix flake are not
+inherited from the shell that launches emacsclient.  Refreshing envrc here
+ensures clangd is resolved from the project's dev shell before Eglot starts."
+  (when (and (bound-and-true-p envrc-mode)
+             (fboundp 'envrc--update))
+    (envrc--update))
+  (eglot-ensure))
+
+(dolist (hook '(c-mode-hook
+                c-ts-mode-hook
+                c++-mode-hook
+                c++-ts-mode-hook
+                c-or-c++-mode-hook
+                c-or-c++-ts-mode-hook))
+  (add-hook hook #'yurikon/eglot-ensure-after-envrc))
 
 ;; Python indentation
 (setq python-indent-offset 4
