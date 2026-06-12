@@ -65,6 +65,9 @@ in
           flycheck
           flycheck-package
           package-lint
+          prescient
+          corfu-prescient
+          vertico-prescient
           elsa
           helpful
           multiple-cursors

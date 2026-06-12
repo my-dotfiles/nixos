@@ -164,7 +164,7 @@
 (marginalia-mode 1)
 (setq completion-styles '(orderless basic)
       completion-category-defaults nil
-      completion-category-overrides '((file (styles partial-completion))))
+      completion-category-overrides '((file (styles basic partial-completion))))
 
 (global-set-key (kbd "C-s") #'consult-line)
 (global-set-key (kbd "C-x b") #'consult-buffer)
@@ -173,8 +173,24 @@
 (global-set-key (kbd "M-g g") #'consult-goto-line)
 (global-set-key (kbd "C-c f") #'project-find-file)
 (global-set-key (kbd "C-c s") #'consult-ripgrep)
+
+(setq xref-show-xrefs-function #'consult-xref
+      xref-show-definitions-function #'consult-xref)
 (require 'magit)
 (global-set-key (kbd "C-c g") #'magit-status)
+
+(require 'prescient)
+(require 'vertico-prescient)
+(require 'corfu-prescient)
+
+(setq prescient-persist-mode t)
+(prescient-persist-mode 1)
+
+;; Only use prescient to order, use orderless to filter
+(setq vertico-prescient-enable-filtering nil
+      corfu-prescient-enable-filtering nil)
+(vertico-prescient-mode 1)
+(corfu-prescient-mode 1)
 
 (defun yurikon/wl-copy-region (beg end)
   "Copy the active region to the Wayland clipboard with wl-copy."
@@ -356,8 +372,8 @@
 (add-hook 'nix-mode-hook #'eglot-ensure)
 (add-hook 'python-mode-hook #'eglot-ensure)
 (add-hook 'python-ts-mode-hook #'eglot-ensure)
-(add-hook 'typescript-ts-mode #'eglot-ensure)
-(add-hook 'tsx-ts-mode #'eglot-ensure)
+(add-hook 'typescript-ts-mode-hook #'eglot-ensure)
+(add-hook 'tsx-ts-mode-hook #'eglot-ensure)
 
 (defun yurikon/eglot-ensure-after-envrc ()
   "Refresh direnv for the current buffer before starting Eglot.
@@ -403,7 +419,7 @@ ensures clangd is resolved from the project's dev shell before Eglot starts."
 (require 'embark)
 (require 'embark-consult)
 (global-set-key (kbd "C-.") #'embark-act)
-;; (global-set-key (kbd "C-,") #'embark-dwim)
+(global-set-key (kbd "C-,") #'embark-dwim)
 (global-set-key (kbd "C-h B") #'embark-bindings)
 
 (setq prefix-help-command #'embark-prefix-help-command)
