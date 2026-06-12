@@ -18,6 +18,7 @@ in
       vim
       wget
       git
+      git-lfs
       curl
       tree
       unzip
