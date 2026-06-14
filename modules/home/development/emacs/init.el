@@ -472,6 +472,18 @@ ensures clangd is resolved from the project's dev shell before Eglot starts."
 (add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
 (add-to-list 'auto-mode-alist '("\\.ya?ml\\'" . yaml-mode))
 
+(defun yurikon/open-current-file-externally ()
+  "Open the current file with the desktop default application."
+  (interactive)
+  (let ((file (if (derived-mode-p 'dired-mode)
+                  (dired-get-file-for-visit)
+                buffer-file-name)))
+    (unless file
+      (user-error "Current buffer is not visiting a file"))
+    (start-process "xdg-open" nil "xdg-open" file)))
+
+(global-set-key (kbd "C-c o") #'yurikon/open-current-file-externally)
+
 ;; use mu4e for mail frontend
 (require 'mu4e)
 (setq mail-user-agent 'mu4e-user-agent)
