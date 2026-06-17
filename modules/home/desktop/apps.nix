@@ -38,6 +38,7 @@ in
       ++ optionalPkg "mission-center"
       ++ optionalPkg "thunderbird"
       ++ optionalPkg "thunar"
+      ++ optionalPkg "zed-editor"
       ++ optionalPkg "zotero"
       ++ optionalPkg "zathura"
       ++ optionalPkg "prismlauncher";
