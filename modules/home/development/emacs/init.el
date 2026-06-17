@@ -343,6 +343,20 @@
       org-default-notes-file (expand-file-name "notes.org" org-directory))
 (make-directory org-directory t)
 
+(require 'ox-publish)
+
+(setq org-publish-project-alist
+      '(("org-learning"
+         :base-directory "/home/yurikon/Learning/org-learning"
+         :publishing-directory "/home/yurikon/Learning/org-learning/public-html"
+         :recursive t
+         :publishing-function org-html-publish-to-html
+         :with-author nil
+         :with-creator nil
+         :section-numbers t
+         :time-stamp-file t
+         :exclude "public\\|\\.git\\|\\.obsidian\\|org-roam\\.db")))
+
 (require 'org-roam)
 (setq org-roam-directory (file-truename org-directory)
       org-roam-db-location (expand-file-name "org-roam.db" org-roam-directory)
