@@ -12,7 +12,11 @@ let
   menu = "fuzzel";
   primaryOutput = "DP-1";
   laptopOutput = "eDP-1";
+  flclashAppId = "com.follow.clash";
+  screenshotDir = "${config.home.homeDirectory}/Pictures/Screenshots";
   wallpaper = "${config.home.homeDirectory}/Pictures/图片/walls/abstract/a_blue_and_orange_background.jpg";
+  swaymsg = lib.getExe' pkgs.sway "swaymsg";
+  wlCopy = lib.getExe' pkgs.wl-clipboard "wl-copy";
   directionKeys = {
     h = "left";
     j = "down";
@@ -72,16 +76,99 @@ let
       exec ${lib.getExe pkgs.swaybg} -i "${wallpaper}" -m fill
     fi
   '';
+  flclashGui = pkgs.writeShellScriptBin "flclash-gui" ''
+    has_window() {
+      ${swaymsg} -t get_tree \
+        | ${lib.getExe pkgs.jq} -e '.. | objects | select(.app_id? == "${flclashAppId}")' >/dev/null
+    }
+
+    if ${pkgs.procps}/bin/pgrep -x FlClash >/dev/null; then
+      if has_window; then
+        ${swaymsg} '[app_id="${flclashAppId}"] scratchpad show, focus'
+        exit 0
+      fi
+
+      ${pkgs.procps}/bin/pkill -x FlClash
+      sleep 1
+    fi
+
+    exec ${lib.getExe' pkgs.flclash "FlClash"} "$@"
+  '';
+  closeWindow = pkgs.writeShellScriptBin "close-sway-window" ''
+    app_id="$(${swaymsg} -t get_tree \
+      | ${lib.getExe pkgs.jq} -r '.. | objects | select(.focused? == true) | .app_id // empty' \
+      | ${pkgs.coreutils}/bin/head -n1)"
+
+    if [ "$app_id" = "${flclashAppId}" ]; then
+      exec ${swaymsg} move scratchpad
+    fi
+
+    exec ${swaymsg} kill
+  '';
+  screenshot =
+    mode:
+    pkgs.writeShellScriptBin "screenshot-${mode}" ''
+      set -eu
+
+      dir="${screenshotDir}"
+      ${pkgs.coreutils}/bin/mkdir -p "$dir"
+      file="$dir/Screenshot from $(${pkgs.coreutils}/bin/date '+%Y-%m-%d %H-%M-%S').png"
+
+      case "${mode}" in
+        area)
+          geometry="$(${lib.getExe pkgs.slurp})"
+          [ -n "$geometry" ]
+          ${lib.getExe pkgs.grim} -g "$geometry" "$file"
+          ;;
+        edit)
+          geometry="$(${lib.getExe pkgs.slurp})"
+          [ -n "$geometry" ]
+          ${lib.getExe pkgs.grim} -g "$geometry" - | ${lib.getExe pkgs.swappy} -f -
+          exit 0
+          ;;
+        screen)
+          ${lib.getExe pkgs.grim} "$file"
+          ;;
+        window)
+          geometry="$(${swaymsg} -t get_tree \
+            | ${lib.getExe pkgs.jq} -r '.. | objects | select(.focused? == true) | .rect | "\(.x),\(.y) \(.width)x\(.height)"' \
+            | ${pkgs.coreutils}/bin/head -n1)"
+          [ -n "$geometry" ]
+          ${lib.getExe pkgs.grim} -g "$geometry" "$file"
+          ;;
+      esac
+
+      ${wlCopy} < "$file"
+    '';
 in
 {
   options.myHome.desktop.sway.enable = lib.mkEnableOption "Sway compositor user configuration";
 
   config = lib.mkIf cfg.enable {
     home.packages = with pkgs; [
+      closeWindow
+      flclashGui
       fuzzel
+      jq
       mako
+      (screenshot "area")
+      (screenshot "edit")
+      (screenshot "screen")
+      (screenshot "window")
       swaybg
     ];
+
+    xdg.dataFile."applications/flclash.desktop".text = ''
+      [Desktop Entry]
+      Categories=Network
+      Exec=flclash-gui %U
+      GenericName=FlClash
+      Icon=flclash
+      Keywords=FlClash;Clash;ClashMeta;Proxy;
+      Name=FlClash
+      Type=Application
+      Version=1.5
+    '';
 
     services.mako = {
       enable = true;
@@ -100,6 +187,9 @@ in
         default-timeout = 6000;
       };
     };
+
+    # 为 FLClash 等使用 StatusNotifierItem/AppIndicator 的程序提供托盘 watcher。
+    services.status-notifier-watcher.enable = true;
 
     wayland.windowManager.sway = {
       enable = true;
@@ -135,15 +225,15 @@ in
           # 主显示器：24 寸 2560x1440，放在全局坐标原点，也就是左侧。
           ${primaryOutput} = {
             mode = "2560x1440@165.001Hz";
-            scale = "1";
+            scale = "1.25";
             position = "0 0";
           };
           # 笔记本内屏：位于 DP-1 右侧。
-          # DP-1 使用 1.0 缩放后逻辑宽度是 2560，所以 eDP-1 的 x 从 2560 开始，避免两个输出重叠。
+          # DP-1 使用 1.25 缩放后逻辑宽度是 2048，所以 eDP-1 的 x 从 2048 开始。
           ${laptopOutput} = {
             mode = "1920x1080@120.030Hz";
             scale = "1.5";
-            position = "2560 0";
+            position = "2048 0";
           };
         };
 
@@ -151,6 +241,7 @@ in
           {
             position = "top";
             statusCommand = "while date +'%Y-%m-%d %X'; do sleep 1; done";
+            # 托盘只放在主显示器，FLClash 等代理/后台工具会显示在这里。
             trayOutput = primaryOutput;
             fonts = {
               names = [ "Maple Mono NF CN" ];
@@ -179,6 +270,8 @@ in
 
         startup = [
           { command = "${setWallpaper}"; }
+          # 启动 Home Manager 的托盘 target，让 status-notifier-watcher 接管托盘图标。
+          { command = "systemctl --user start tray.target"; }
           {
             command = "dbus-update-activation-environment --systemd WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP GTK_IM_MODULE QT_IM_MODULE XMODIFIERS INPUT_METHOD SDL_IM_MODULE LANG LC_CTYPE LC_ALL";
           }
@@ -225,7 +318,7 @@ in
         keybindings = {
           "${mod}+Return" = "exec ${terminal}";
           "${mod}+d" = "exec ${menu}";
-          "${mod}+Shift+q" = "kill";
+          "${mod}+Shift+q" = "exec close-sway-window";
           "${mod}+Shift+c" = "reload";
           "${mod}+Shift+e" =
             "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -B 'Yes, exit sway' 'swaymsg exit'";
@@ -255,7 +348,12 @@ in
           "--locked XF86AudioStop" = "exec playerctl stop";
           "--locked XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
           "--locked XF86MonBrightnessUp" = "exec brightnessctl set 5%+";
-          "Print" = "exec grim";
+          # 参照 Niri：Ctrl+Shift+Mod+4 区域截图，Alt+Ctrl+Shift+Mod+4 全屏截图。
+          "Ctrl+Shift+${mod}+4" = "exec screenshot-area";
+          "Alt+Ctrl+Shift+${mod}+4" = "exec screenshot-screen";
+          "Print" = "exec screenshot-screen";
+          "Shift+Print" = "exec screenshot-edit";
+          "Ctrl+Print" = "exec screenshot-window";
         }
         // mkDirectionBindings "" "focus"
         // mkDirectionBindings "Shift+" "move"
