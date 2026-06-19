@@ -30,6 +30,7 @@
     ../desktop/mime.nix
     ../desktop/mpv.nix
     ../desktop/niri.nix
+    ../desktop/sway.nix
     ../services/rclone.nix
     ../secrets/sops.nix
     ../secrets/local-files.nix

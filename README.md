@@ -120,38 +120,28 @@ Home Manager 的结构化选项，例如 `programs.*`、`services.*`、`xdg.conf
 
 ## 桌面环境
 
-目标桌面是 Niri + Noctalia v5。
+目标桌面是 Sway。当前取舍是：使用 Sway 时放弃 Noctalia，保留简洁、高效、可扩展、
+阅读负担低的桌面组织方式。
 
-Niri 的系统级集成位于：
-
-```text
-modules/system/desktop/niri.nix
-```
-
-这里负责启用 Niri、GDM 登录管理器、portal、常用 Wayland 工具、
-power/bluetooth 相关服务，并从官方 v5 flake package 安装 Noctalia：
-
-```nix
-inputs.noctalia.packages.${system}.default
-```
-
-Niri 的用户级配置位于：
+Sway 的系统级集成位于：
 
 ```text
-modules/home/desktop/niri.nix
+modules/system/desktop/sway.nix
 ```
 
-Niri 启动时会用 v5 命令拉起 Noctalia：
+这里负责启用 Sway、greetd 登录入口、常用 Wayland 工具、power/bluetooth 相关服务。
 
-```kdl
-spawn-at-startup "noctalia"
+Sway 的用户级配置位于：
+
+```text
+modules/home/desktop/sway.nix
 ```
 
-Noctalia 由 Nix 安装，但它的用户设置不由 Home Manager 管理。后续通过
-Noctalia 自己的 UI 或本地配置文件设置即可。
+用户级配置集中管理输入、输出、快捷键、启动项、截图、锁屏和通知。Niri/Noctalia
+模块仍保留为可回退参考，但 workstation profile 不启用它们。
 
-GNOME Desktop 有意不启用。当前保留 GDM 只是作为登录管理器，方便在登录界面选择
-Niri session。
+GNOME Desktop 有意不启用。当前使用 greetd/tuigreet 作为登录入口，默认进入 Sway
+session。
 
 ## 迁移规则
 

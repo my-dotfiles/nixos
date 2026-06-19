@@ -3,7 +3,7 @@
 {
   imports = [
     ./base.nix
-    ../desktop/niri.nix
+    ../desktop/sway.nix
     ../desktop/steam.nix
   ];
 
@@ -17,7 +17,7 @@
       users.enable = true;
     };
 
-    desktop.niri.enable = true;
+    desktop.sway.enable = true;
     desktop.thunar.enable = true;
     desktop.steam.enable = true;
 
