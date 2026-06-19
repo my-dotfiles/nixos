@@ -10,6 +10,8 @@ let
   mod = "Mod4";
   terminal = "alacritty";
   menu = "fuzzel";
+  primaryOutput = "DP-1";
+  laptopOutput = "eDP-1";
   wallpaper = "${config.home.homeDirectory}/Pictures/图片/walls/abstract/a_blue_and_orange_background.jpg";
   directionKeys = {
     h = "left";
@@ -32,6 +34,17 @@ let
         name = "10";
       }
     ];
+  workspaceOutputAssign =
+    (builtins.map (workspace: {
+      inherit (workspace) name;
+      workspace = workspace.name;
+      output = primaryOutput;
+    }) (builtins.filter (workspace: lib.toInt workspace.name <= 5) workspaces))
+    ++ (builtins.map (workspace: {
+      inherit (workspace) name;
+      workspace = workspace.name;
+      output = laptopOutput;
+    }) (builtins.filter (workspace: lib.toInt workspace.name > 5) workspaces));
   mkDirectionBindings =
     prefix: command:
     lib.mapAttrs' (
@@ -97,9 +110,10 @@ in
         modifier = mod;
         terminal = terminal;
         menu = menu;
+        # 不留窗口间距：平铺窗口直接吃满可用区域，只保留顶部状态栏占用的空间。
         gaps = {
-          inner = 8;
-          outer = 4;
+          inner = 0;
+          outer = 0;
         };
         fonts = {
           names = [ "Maple Mono NF CN" ];
@@ -118,15 +132,18 @@ in
         };
 
         output = {
-          "eDP-1" = {
-            mode = "1920x1080@120.030Hz";
-            scale = "1.5";
+          # 主显示器：24 寸 2560x1440，放在全局坐标原点，也就是左侧。
+          ${primaryOutput} = {
+            mode = "2560x1440@165.001Hz";
+            scale = "1";
             position = "0 0";
           };
-          "DP-1" = {
-            mode = "2560x1440@165.001Hz";
-            scale = "1.25";
-            position = "1280 0";
+          # 笔记本内屏：位于 DP-1 右侧。
+          # DP-1 使用 1.0 缩放后逻辑宽度是 2560，所以 eDP-1 的 x 从 2560 开始，避免两个输出重叠。
+          ${laptopOutput} = {
+            mode = "1920x1080@120.030Hz";
+            scale = "1.5";
+            position = "2560 0";
           };
         };
 
@@ -134,6 +151,7 @@ in
           {
             position = "top";
             statusCommand = "while date +'%Y-%m-%d %X'; do sleep 1; done";
+            trayOutput = primaryOutput;
             fonts = {
               names = [ "Maple Mono NF CN" ];
               size = 10.0;
@@ -152,12 +170,15 @@ in
                 text = "#8b949e";
               };
             };
+            extraConfig = ''
+              # 只在主显示器显示状态栏，避免多显示器下重复显示日期、时间和托盘图标。
+              output ${primaryOutput}
+            '';
           }
         ];
 
         startup = [
           { command = "${setWallpaper}"; }
-          { command = "fcitx5 -d"; }
           {
             command = "dbus-update-activation-environment --systemd WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP GTK_IM_MODULE QT_IM_MODULE XMODIFIERS INPUT_METHOD SDL_IM_MODULE LANG LC_CTYPE LC_ALL";
           }
@@ -167,7 +188,7 @@ in
         ];
 
         window = {
-          border = 2;
+          border = 0;
           titlebar = false;
         };
 
@@ -193,6 +214,13 @@ in
             childBorder = "#30363d";
           };
         };
+
+        # 启动后默认显示 workspace 1；workspace 1-5 固定到主显示器，6-10 固定到内屏。
+        defaultWorkspace = "workspace number 1";
+        workspaceOutputAssign = builtins.map (item: {
+          workspace = item.workspace;
+          output = item.output;
+        }) workspaceOutputAssign;
 
         keybindings = {
           "${mod}+Return" = "exec ${terminal}";
