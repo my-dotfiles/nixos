@@ -188,8 +188,132 @@ in
       };
     };
 
-    # 为 FLClash 等使用 StatusNotifierItem/AppIndicator 的程序提供托盘 watcher。
-    services.status-notifier-watcher.enable = true;
+    # 使用 Waybar 替代 swaybar。Waybar 的 tray 模块更接近传统桌面托盘行为，
+    # FLClash、Steam 这类应用的右键菜单优先交给它处理。
+    programs.workstyle = {
+      enable = true;
+      systemd = {
+        enable = true;
+        target = "sway-session.target";
+      };
+      settings = {
+        # Workstyle 会根据窗口 app_id/class 动态重命名 workspace，Waybar 直接显示结果。
+        # 使用短字符而不是大图标，避免状态栏变宽或依赖特定图标字体。
+        alacritty = "T";
+        Alacritty = "T";
+        firefox = "W";
+        "org.mozilla.firefox" = "W";
+        qutebrowser = "W";
+        emacs = "E";
+        "emacsclient" = "E";
+        zed = "E";
+        "dev.zed.Zed" = "E";
+        thunar = "F";
+        "org.gnome.Nautilus" = "F";
+        thunderbird = "M";
+        steam = "S";
+        Steam = "S";
+        "com.follow.clash" = "C";
+        FlClash = "C";
+        "com.mitchellh.ghostty" = "T";
+        ghostty = "T";
+        "org.pwmt.zathura" = "D";
+        zotero = "Z";
+        other = {
+          fallback_icon = "·";
+          deduplicate_icons = true;
+          separator = " ";
+        };
+      };
+    };
+
+    programs.waybar = {
+      enable = true;
+      systemd = {
+        enable = true;
+        targets = [ "sway-session.target" ];
+      };
+      settings.mainBar = {
+        layer = "top";
+        position = "bottom";
+        output = [ primaryOutput ];
+        height = 24;
+        spacing = 8;
+
+        modules-left = [
+          "sway/workspaces"
+          "sway/mode"
+        ];
+        modules-center = [ ];
+        modules-right = [
+          "tray"
+          "network"
+          "pulseaudio"
+          "clock"
+        ];
+
+        "sway/workspaces" = {
+          disable-scroll = true;
+          all-outputs = false;
+          # Workstyle 会把 workspace 名称改为「编号: 窗口字符」，这里显示完整名称。
+          format = "{name}";
+        };
+        tray = {
+          icon-size = 16;
+          spacing = 8;
+        };
+        network = {
+          interval = 5;
+          format-wifi = "W {signalStrength}%";
+          format-ethernet = "E";
+          format-disconnected = "N/A";
+          tooltip = false;
+        };
+        pulseaudio = {
+          format = "V {volume}%";
+          format-muted = "V mute";
+          on-click = "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
+          tooltip = false;
+        };
+        clock = {
+          format = "{:%m-%d %H:%M}";
+          tooltip-format = "{:%Y-%m-%d %A}";
+        };
+      };
+      style = ''
+        * {
+          border: none;
+          border-radius: 0;
+          font-family: "Maple Mono NF CN", monospace;
+          font-size: 10pt;
+          min-height: 0;
+        }
+
+        window#waybar {
+          background: #111318;
+          color: #e6edf3;
+        }
+
+        #workspaces button {
+          color: #8b949e;
+          padding: 0 7px;
+        }
+
+        #workspaces button.focused,
+        #workspaces button.visible {
+          background: #7fc8ff;
+          color: #111318;
+        }
+
+        #mode,
+        #tray,
+        #network,
+        #pulseaudio,
+        #clock {
+          padding: 0 8px;
+        }
+      '';
+    };
 
     wayland.windowManager.sway = {
       enable = true;
@@ -237,41 +361,11 @@ in
           };
         };
 
-        bars = [
-          {
-            position = "top";
-            statusCommand = "while date +'%Y-%m-%d %X'; do sleep 1; done";
-            # 托盘只放在主显示器，FLClash 等代理/后台工具会显示在这里。
-            trayOutput = primaryOutput;
-            fonts = {
-              names = [ "Maple Mono NF CN" ];
-              size = 10.0;
-            };
-            colors = {
-              background = "#111318";
-              statusline = "#e6edf3";
-              focusedWorkspace = {
-                border = "#7fc8ff";
-                background = "#7fc8ff";
-                text = "#111318";
-              };
-              inactiveWorkspace = {
-                border = "#30363d";
-                background = "#111318";
-                text = "#8b949e";
-              };
-            };
-            extraConfig = ''
-              # 只在主显示器显示状态栏，避免多显示器下重复显示日期、时间和托盘图标。
-              output ${primaryOutput}
-            '';
-          }
-        ];
+        # 关闭 Sway 内置 swaybar，改由 Waybar 提供底部状态栏。
+        bars = [ ];
 
         startup = [
           { command = "${setWallpaper}"; }
-          # 启动 Home Manager 的托盘 target，让 status-notifier-watcher 接管托盘图标。
-          { command = "systemctl --user start tray.target"; }
           {
             command = "dbus-update-activation-environment --systemd WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP GTK_IM_MODULE QT_IM_MODULE XMODIFIERS INPUT_METHOD SDL_IM_MODULE LANG LC_CTYPE LC_ALL";
           }
