@@ -72,6 +72,9 @@ in
           helpful
           multiple-cursors
 
+          tempel
+          tempel-collection
+
           tuareg
           ocaml-eglot
 

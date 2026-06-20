@@ -226,6 +226,12 @@
 
 (setq tab-always-indent 'complete)
 
+(require 'tempel)
+(require 'tempel-collection)
+
+(global-set-key (kbd "C-c y c") #'tempel-complete)
+(global-set-key (kbd "C-c y i") #'tempel-insert)
+
 ;; Prefer official tree-sitter major modes when Emacs provides them.
 (require 'treesit)
 (setq treesit-font-lock-level 4)
