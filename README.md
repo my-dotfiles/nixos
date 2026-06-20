@@ -48,7 +48,7 @@ modules/
   home/
     core/            XDG、shell/session、稳定的用户默认行为。
     cli/             终端工具和命令行工作流。
-    desktop/         GUI 应用、字体、MIME、fcitx5、Niri 配置。
+    desktop/         GUI 应用、字体、MIME、fcitx5、Sway/Waybar 配置。
     development/     编辑器和全局开发工具。
     secrets/         本地 secret 文件接入；不存放 secret 明文。
     profiles/        Home Manager 模块组合。
@@ -121,7 +121,8 @@ Home Manager 的结构化选项，例如 `programs.*`、`services.*`、`xdg.conf
 ## 桌面环境
 
 目标桌面是 Sway。当前取舍是：使用 Sway 时放弃 Noctalia，保留简洁、高效、可扩展、
-阅读负担低的桌面组织方式。
+阅读负担低的桌面组织方式。Niri/Noctalia 模块仍保留为可回退参考，但 workstation
+profile 不启用它们。
 
 Sway 的系统级集成位于：
 
@@ -137,8 +138,40 @@ Sway 的用户级配置位于：
 modules/home/desktop/sway.nix
 ```
 
-用户级配置集中管理输入、输出、快捷键、启动项、截图、锁屏和通知。Niri/Noctalia
-模块仍保留为可回退参考，但 workstation profile 不启用它们。
+用户级配置集中管理输入、输出、快捷键、启动项、截图、锁屏、通知和 Waybar。Sway
+内置 `swaybar` 已关闭，当前使用 Home Manager 的 `programs.waybar` 提供底部状态栏。
+
+当前显示器布局：
+
+- `DP-1` 是主显示器，24 寸，`2560x1440@165.001Hz`，`scale = 1.25`，位置 `0 0`。
+- `eDP-1` 是笔记本内屏，`1920x1080@120.030Hz`，`scale = 1.5`，位于主屏右侧，位置 `2048 0`。
+- workspace `1` 到 `5` 固定到 `DP-1`，workspace `6` 到 `10` 固定到 `eDP-1`。
+- 启动默认进入 workspace `1`。
+
+窗口策略保持极简：平铺窗口没有 gaps，也没有边框；单窗口占满可用区域。浮动窗口保留
+边框，方便识别。
+
+Waybar 位于主屏底部，只显示一条极简状态栏：
+
+- 左侧：workspace 和当前 mode。
+- 中间：留空。
+- 右侧：tray、网络、音量、时间。
+
+workspace 显示由 Workstyle 优化。Workstyle 会监听 Sway 窗口变化并重命名 workspace，
+用短字符表示当前 workspace 里的应用，例如终端 `T`、浏览器 `W`、编辑器 `E`、
+FLClash `C`、Steam `S`。Waybar 直接显示 Workstyle 生成的 workspace 名称。
+
+FLClash、Steam 等托盘程序优先通过 Waybar 的 `tray` 模块承载。为避免 FLClash
+单实例进程在窗口被杀后无法重新打开 GUI，`Mod+Shift+q` 不再直接 kill FLClash
+窗口，而是把它移动到 scratchpad；`flclash.desktop` 被覆盖为调用 `flclash-gui`。
+
+截图快捷键：
+
+- `Ctrl+Shift+Mod+4`：区域截图，保存到 `~/Pictures/Screenshots` 并复制到剪贴板。
+- `Alt+Ctrl+Shift+Mod+4`：全屏截图，保存并复制到剪贴板。
+- `Print`：全屏截图，保存并复制到剪贴板。
+- `Shift+Print`：区域截图并打开 `swappy` 标注。
+- `Ctrl+Print`：当前窗口截图，保存并复制到剪贴板。
 
 GNOME Desktop 有意不启用。当前使用 greetd/tuigreet 作为登录入口，默认进入 Sway
 session。
