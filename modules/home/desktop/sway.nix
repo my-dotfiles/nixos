@@ -197,7 +197,7 @@ in
         target = "sway-session.target";
       };
       settings = {
-        # Workstyle 会根据窗口 app_id/class 动态重命名 workspace，Waybar 直接显示结果。
+        # workstyle 会根据窗口 app_id/class 动态重命名 workspace，Waybar 直接显示结果。
         # 使用短字符而不是大图标，避免状态栏变宽或依赖特定图标字体。
         alacritty = "T";
         Alacritty = "T";
@@ -244,12 +244,11 @@ in
           "sway/workspaces"
           "sway/mode"
         ];
-        modules-center = [ ];
+        modules-center = [ "clock" ];
         modules-right = [
           "tray"
           "network"
           "pulseaudio"
-          "clock"
         ];
 
         "sway/workspaces" = {
@@ -368,9 +367,6 @@ in
           { command = "${setWallpaper}"; }
           {
             command = "dbus-update-activation-environment --systemd WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP GTK_IM_MODULE QT_IM_MODULE XMODIFIERS INPUT_METHOD SDL_IM_MODULE LANG LC_CTYPE LC_ALL";
-          }
-          {
-            command = "swayidle -w timeout 300 'lock-screen' timeout 600 'swaymsg output * power off' resume 'swaymsg output * power on' before-sleep 'lock-screen'";
           }
         ];
 
