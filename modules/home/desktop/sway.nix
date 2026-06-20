@@ -316,6 +316,9 @@ in
         }) workspaceOutputAssign;
 
         keybindings = {
+          "${mod}+Tab" = "workspace next";
+          "${mod}+Shift+Tab" = "workspace prev";
+
           "${mod}+Return" = "exec ${terminal}";
           "${mod}+d" = "exec ${menu}";
           "${mod}+Shift+q" = "exec close-sway-window";
@@ -336,6 +339,8 @@ in
           "${mod}+Shift+minus" = "move scratchpad";
           "${mod}+minus" = "scratchpad show";
           "${mod}+r" = "mode resize";
+
+          "${mod}+Alt+l" = "exec lock-screen";
 
           "--locked XF86AudioMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
           "--locked XF86AudioLowerVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-";
