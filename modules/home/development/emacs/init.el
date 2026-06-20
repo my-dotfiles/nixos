@@ -229,8 +229,36 @@
 (require 'tempel)
 (require 'tempel-collection)
 
+(defun yurikon/tempel-setup-capf ()
+  "Let exact Tempel templates participate in completion-at-point."
+  (add-hook 'completion-at-point-functions #'tempel-expand nil t))
+
+(defun yurikon/tempel-expand-maybe ()
+  "Expand an exact Tempel template at point, returning non-nil on success."
+  (condition-case nil
+      (progn
+        (tempel-expand t)
+        t)
+    (user-error nil)))
+
+(add-hook 'prog-mode-hook #'yurikon/tempel-setup-capf)
+(add-hook 'text-mode-hook #'yurikon/tempel-setup-capf)
+(add-hook 'conf-mode-hook #'yurikon/tempel-setup-capf)
+
 (global-set-key (kbd "C-c y c") #'tempel-complete)
 (global-set-key (kbd "C-c y i") #'tempel-insert)
+
+(with-eval-after-load 'org
+  (require 'org-tempo)
+
+  (defun yurikon/org-cycle-or-tempel-expand ()
+    "Expand an exact Tempel template, otherwise fall back to `org-cycle'."
+    (interactive)
+    (unless (yurikon/tempel-expand-maybe)
+      (call-interactively #'org-cycle)))
+
+  (keymap-set org-mode-map "TAB" #'yurikon/org-cycle-or-tempel-expand)
+  (keymap-set org-mode-map "<tab>" #'yurikon/org-cycle-or-tempel-expand))
 
 ;; Prefer official tree-sitter major modes when Emacs provides them.
 (require 'treesit)
