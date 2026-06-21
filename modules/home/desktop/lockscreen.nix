@@ -26,10 +26,6 @@ let
     swaylock_args=(
       --ignore-empty-password
       --show-failed-attempts
-      --indicator
-      --clock
-      --timestr "%H:%M"
-      --datestr "%A, %Y-%m-%d"
       --font "Maple Mono NF CN"
       --font-size 28
       --indicator-radius 120
@@ -50,17 +46,15 @@ let
       --text-ver-color "e6edf3ff"
       --text-wrong-color "ffd6d6ff"
       --text-clear-color "e6edf3ff"
-      --effect-vignette "0.35:0.35"
-      --fade-in 0.2
     )
 
     if [ -f "${wallpaper}" ]; then
       swaylock_args+=(--image "${wallpaper}" --scaling fill)
     else
-      swaylock_args+=(--screenshots --effect-blur "8x5")
+      swaylock_args+=(--color "111318")
     fi
 
-    exec ${lib.getExe pkgs.swaylock-effects} "''${swaylock_args[@]}"
+    exec ${swaylock} "''${swaylock_args[@]}"
   '';
   swayidleLockscreen = pkgs.writeShellScript "swayidle-lockscreen" ''
     exec ${lib.getExe pkgs.swayidle} -w \
