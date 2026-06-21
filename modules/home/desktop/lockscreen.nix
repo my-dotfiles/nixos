@@ -7,8 +7,9 @@
 
 let
   cfg = config.myHome.desktop.lockscreen;
-  wallpaper = "${config.home.homeDirectory}/Pictures/图片/walls/abstract/a_blue_and_orange_background.jpg";
+  wallpaper = "${config.home.homeDirectory}/Pictures/图片/walls/anime/a_cartoon_of_a_cat_playing_with_a_ball.png";
   swaymsg = lib.getExe' pkgs.sway "swaymsg";
+  swaylock = lib.getExe pkgs.swaylock;
   lockScreen = pkgs.writeShellScriptBin "lock-screen" ''
     runtime_dir="''${XDG_RUNTIME_DIR:-/tmp}"
     lock_file="$runtime_dir/lock-screen.lock"

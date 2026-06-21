@@ -33,7 +33,7 @@ in
       sway
       swaybg
       swayidle
-      swaylock-effects
+      swaylock
       wl-clipboard
       grim
       slurp

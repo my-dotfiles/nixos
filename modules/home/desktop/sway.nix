@@ -14,7 +14,7 @@ let
   laptopOutput = "eDP-1";
   flclashAppId = "com.follow.clash";
   screenshotDir = "${config.home.homeDirectory}/Pictures/Screenshots";
-  wallpaper = "${config.home.homeDirectory}/Pictures/图片/walls/abstract/a_blue_and_orange_background.jpg";
+  wallpaper = "${config.home.homeDirectory}/Pictures/图片/walls/centered/a_cat_sitting_next_to_a_computer.jpg";
   swaymsg = lib.getExe' pkgs.sway "swaymsg";
   wlCopy = lib.getExe' pkgs.wl-clipboard "wl-copy";
   directionKeys = {
