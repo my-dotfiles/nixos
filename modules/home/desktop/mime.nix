@@ -11,7 +11,7 @@ in
       enable = true;
       defaultApplications = {
         "application/json" = [ "Helix.desktop" ];
-        "application/pdf" = [ "org.pwmt.zathura-pdf-mupdf.desktop" ];
+        "application/pdf" = [ "org.kde.okular.desktop" ];
         "application/x-yaml" = [ "Helix.desktop" ];
         "image/apng" = [ "org.gnome.Loupe.desktop" ];
         "image/avif" = [ "org.gnome.Loupe.desktop" ];

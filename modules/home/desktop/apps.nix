@@ -40,7 +40,7 @@ in
       ++ optionalPkg "thunar"
       ++ optionalPkg "zed-editor"
       ++ optionalPkg "zotero"
-      ++ optionalPkg "zathura"
+      ++ lib.optional (lib.hasAttrByPath [ "kdePackages" "okular" ] pkgs) pkgs.kdePackages.okular
       ++ optionalPkg "prismlauncher";
   };
 }
