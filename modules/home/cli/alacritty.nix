@@ -10,6 +10,7 @@ in
     programs.alacritty = {
       enable = true;
       settings = {
+        env.WINIT_UNIX_BACKEND = "wayland";
         window.blur = true;
         window.opacity = 0.95;
         font = {
