@@ -9,24 +9,24 @@ let
   cfg = config.mySystem.core.locale;
 in
 {
-  options.mySystem.core.locale.enable = lib.mkEnableOption "Chinese locale and input method";
+  options.mySystem.core.locale.enable = lib.mkEnableOption "English locale and input method";
 
   config = lib.mkIf cfg.enable {
     time.timeZone = "Asia/Shanghai";
 
     i18n = {
-      defaultLocale = "zh_CN.UTF-8";
+      defaultLocale = "en_US.UTF-8";
 
       extraLocaleSettings = {
-        LC_ADDRESS = "zh_CN.UTF-8";
-        LC_IDENTIFICATION = "zh_CN.UTF-8";
-        LC_MEASUREMENT = "zh_CN.UTF-8";
-        LC_MONETARY = "zh_CN.UTF-8";
-        LC_NAME = "zh_CN.UTF-8";
-        LC_NUMERIC = "zh_CN.UTF-8";
-        LC_PAPER = "zh_CN.UTF-8";
-        LC_TELEPHONE = "zh_CN.UTF-8";
-        LC_TIME = "zh_CN.UTF-8";
+        LC_ADDRESS = "en_US.UTF-8";
+        LC_IDENTIFICATION = "en_US.UTF-8";
+        LC_MEASUREMENT = "en_US.UTF-8";
+        LC_MONETARY = "en_US.UTF-8";
+        LC_NAME = "en_US.UTF-8";
+        LC_NUMERIC = "en_US.UTF-8";
+        LC_PAPER = "en_US.UTF-8";
+        LC_TELEPHONE = "en_US.UTF-8";
+        LC_TIME = "en_US.UTF-8";
       };
 
       inputMethod = {
