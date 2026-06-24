@@ -367,6 +367,7 @@ in
         bars = [ ];
 
         startup = [
+          { command = "fcitx5 -d"; }
           { command = "${setWallpaper}"; }
           {
             command = "dbus-update-activation-environment --systemd WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP GTK_IM_MODULE QT_IM_MODULE XMODIFIERS INPUT_METHOD SDL_IM_MODULE LANG LC_CTYPE LC_ALL";
