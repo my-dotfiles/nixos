@@ -18,7 +18,7 @@ in
     };
 
     services = {
-      greetd = {
+      greetd = lib.mkIf (!config.services.displayManager.sddm.enable) {
         enable = true;
         useTextGreeter = true;
         settings.default_session.command = "${lib.getExe pkgs.tuigreet} --time --remember --remember-session --sessions ${config.services.displayManager.sessionData.desktops}/share/wayland-sessions --cmd sway";

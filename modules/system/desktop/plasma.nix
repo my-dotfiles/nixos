@@ -14,12 +14,8 @@ in
   config = lib.mkIf cfg.enable {
     assertions = [
       {
-        assertion = !config.mySystem.desktop.sway.enable;
-        message = "Only one desktop stack should be enabled: disable mySystem.desktop.sway when enabling Plasma.";
-      }
-      {
         assertion = !config.mySystem.desktop.niri.enable;
-        message = "Only one desktop stack should be enabled: disable mySystem.desktop.niri when enabling Plasma.";
+        message = "Only one display-manager-owning desktop stack should be enabled: disable mySystem.desktop.niri when enabling Plasma.";
       }
     ];
 
@@ -31,7 +27,7 @@ in
           enable = true;
           wayland.enable = true;
         };
-        defaultSession = "plasma";
+        defaultSession = lib.mkDefault "plasma";
       };
 
       greetd.enable = lib.mkForce false;

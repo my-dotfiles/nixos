@@ -34,10 +34,10 @@
   myHome.desktop.apps.enable = true;
   myHome.desktop.fonts.enable = true;
   myHome.desktop.fcitx5.enable = true;
-  myHome.desktop.lockscreen.enable = false;
+  myHome.desktop.lockscreen.enable = true;
   myHome.desktop.mime.enable = true;
   myHome.desktop.mpv.enable = true;
-  myHome.desktop.sway.enable = false;
+  myHome.desktop.sway.enable = true;
 
   myHome.services.rclone.enable = true;
 

@@ -21,7 +21,7 @@
 
     desktop.niri.enable = false;
     desktop.plasma.enable = true;
-    desktop.sway.enable = false;
+    desktop.sway.enable = true;
     desktop.thunar.enable = false;
     desktop.steam.enable = true;
 
@@ -36,4 +36,6 @@
       usbmuxd.enable = true;
     };
   };
+
+  services.displayManager.defaultSession = "sway";
 }
