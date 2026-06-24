@@ -110,9 +110,6 @@ in
       "XMODIFIERS=@im=fcitx"
       "INPUT_METHOD=fcitx"
       "SDL_IM_MODULE=fcitx"
-      "LANG=zh_CN.UTF-8"
-      "LC_CTYPE=zh_CN.UTF-8"
-      "LC_ALL=zh_CN.UTF-8"
     ];
 
     home.packages = with pkgs; [
