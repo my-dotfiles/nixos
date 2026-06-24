@@ -38,7 +38,6 @@ in
       ++ optionalPkg "mission-center"
       ++ optionalPkg "thunderbird"
       ++ optionalPkg "thunar"
-      ++ optionalPkg "zed-editor"
       ++ optionalPkg "zotero"
       ++ lib.optional (lib.hasAttrByPath [ "kdePackages" "okular" ] pkgs) pkgs.kdePackages.okular
       ++ optionalPkg "prismlauncher";

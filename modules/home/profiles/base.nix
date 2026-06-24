@@ -20,6 +20,7 @@
     ../cli/yazi.nix
     ../development/editor.nix
     ../development/emacs.nix
+    ../development/zed.nix
     ../development/tools.nix
     ../development/codex.nix
     ../development/pi.nix

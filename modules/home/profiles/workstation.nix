@@ -27,6 +27,7 @@
   myHome.cli.yazi.enable = true;
 
   myHome.development.emacs.enable = true;
+  myHome.development.zed.enable = true;
   myHome.development.tools.enable = true;
   myHome.development.codex.enable = true;
   myHome.development.pi.enable = true;
