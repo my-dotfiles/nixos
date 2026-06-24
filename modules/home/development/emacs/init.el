@@ -198,7 +198,7 @@
   (unless (use-region-p)
     (user-error "No active region"))
   (let ((coding-system-for-write 'utf-8-unix))
-    (unless (zerop (call-process-region beg end "wl-copy" nil nil nil
+    (unless (zerop (call-process-region beg end "@wl-copy@" nil nil nil
                                         "--type" "text/plain"))
       (user-error "wl-copy failed")))
   (deactivate-mark)

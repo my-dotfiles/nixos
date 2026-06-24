@@ -8,6 +8,7 @@
 let
   cfg = config.myHome.development.emacs;
   emacsPackages = pkgs.emacsPackagesFor pkgs.emacs-pgtk;
+  wlCopy = lib.getExe' pkgs.wl-clipboard "wl-copy";
 in
 {
   options.myHome.development.emacs.enable = lib.mkEnableOption "Emacs configuration";
@@ -96,7 +97,7 @@ in
       enable = true;
       client.enable = true;
       socketActivation.enable = true;
-      startWithUserSession = true;
+      startWithUserSession = false;
     };
 
     systemd.user.services.emacs.Unit = {
@@ -121,10 +122,13 @@ in
       ripgrep
       fd
       sqlite
+      wl-clipboard
       emacsPackages.elsa
     ];
 
-    home.file.".emacs.d/init.el".source = ./emacs/init.el;
+    home.file.".emacs.d/init.el".text = builtins.replaceStrings [ "@wl-copy@" ] [ wlCopy ] (
+      builtins.readFile ./emacs/init.el
+    );
 
     home.file.".emacs.d/early-init.el".source = ./emacs/early-init.el;
 
