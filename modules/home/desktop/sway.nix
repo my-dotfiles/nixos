@@ -236,7 +236,10 @@ in
       settings.mainBar = {
         layer = "top";
         position = "bottom";
-        output = [ primaryOutput ];
+        output = [
+          primaryOutput
+          laptopOutput
+        ];
         height = 24;
         spacing = 8;
 
@@ -355,7 +358,7 @@ in
           # DP-1 使用 1.25 缩放后逻辑宽度是 2048，所以 eDP-1 的 x 从 2048 开始。
           ${laptopOutput} = {
             mode = "1920x1080@120.030Hz";
-            scale = "1.5";
+            scale = "1.75";
             position = "2048 0";
           };
         };
