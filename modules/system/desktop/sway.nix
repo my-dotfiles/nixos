@@ -29,11 +29,13 @@ in
 
     hardware.bluetooth.enable = true;
 
+    security.pam.services.swaylock = { };
+
     environment.systemPackages = with pkgs; [
       sway
       swaybg
       swayidle
-      swaylock
+      swaylock-effects
       wl-clipboard
       grim
       slurp

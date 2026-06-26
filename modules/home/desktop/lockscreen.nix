@@ -7,21 +7,24 @@
 
 let
   cfg = config.myHome.desktop.lockscreen;
-  wallpaper = "${config.home.homeDirectory}/Pictures/图片/walls/anime/a_cartoon_of_a_cat_playing_with_a_ball.png";
+  systemctl = lib.getExe' pkgs.systemd "systemctl";
   swaymsg = lib.getExe' pkgs.sway "swaymsg";
-  swaylock = lib.getExe pkgs.swaylock;
+  swaylock = lib.getExe pkgs.swaylock-effects;
+  wallpaperArgs = lib.escapeShellArgs cfg.wallpapers;
   lockScreen = pkgs.writeShellScriptBin "lock-screen" ''
-    runtime_dir="''${XDG_RUNTIME_DIR:-/tmp}"
-    lock_file="$runtime_dir/lock-screen.lock"
+    exec ${systemctl} --user start lock-screen.service
+  '';
+  runLockScreen = pkgs.writeShellScript "run-lock-screen" ''
+    set -eu
 
-    exec 9>"$lock_file"
-    if ! ${pkgs.util-linux}/bin/flock -n 9; then
-      exit 0
-    fi
+    wallpapers=(${wallpaperArgs})
+    existing_wallpapers=()
 
-    if ${pkgs.procps}/bin/pgrep -u "$(${pkgs.coreutils}/bin/id -u)" -x swaylock >/dev/null; then
-      exit 0
-    fi
+    for wallpaper in "''${wallpapers[@]}"; do
+      if [ -f "$wallpaper" ]; then
+        existing_wallpapers+=("$wallpaper")
+      fi
+    done
 
     swaylock_args=(
       --ignore-empty-password
@@ -48,8 +51,9 @@ let
       --text-clear-color "e6edf3ff"
     )
 
-    if [ -f "${wallpaper}" ]; then
-      swaylock_args+=(--image "${wallpaper}" --scaling fill)
+    if [ "''${#existing_wallpapers[@]}" -gt 0 ]; then
+      index="$(${pkgs.coreutils}/bin/shuf -i "0-$((''${#existing_wallpapers[@]} - 1))" -n 1)"
+      swaylock_args+=(--image "''${existing_wallpapers[$index]}" --scaling fill)
     else
       swaylock_args+=(--color "111318")
     fi
@@ -65,10 +69,36 @@ let
   '';
 in
 {
-  options.myHome.desktop.lockscreen.enable = lib.mkEnableOption "swaylock lock screen";
+  options.myHome.desktop.lockscreen = {
+    enable = lib.mkEnableOption "Wayland lock screen";
+    wallpapers = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [
+        "${config.home.homeDirectory}/Pictures/图片/walls/centered/a_cat_sitting_next_to_a_computer.jpg"
+        "${config.home.homeDirectory}/Pictures/图片/walls/anime/a_cartoon_of_a_cat_playing_with_a_ball.png"
+      ];
+      description = "Wallpaper candidates for the lock screen. Missing files are ignored.";
+    };
+  };
 
   config = lib.mkIf cfg.enable {
-    home.packages = [ lockScreen ];
+    home.packages = [
+      lockScreen
+      pkgs.swaylock-effects
+    ];
+
+    systemd.user.services.lock-screen = {
+      Unit = {
+        Description = "Swaylock screen locker";
+        After = [ "sway-session.target" ];
+        PartOf = [ "sway-session.target" ];
+      };
+
+      Service = {
+        Type = "exec";
+        ExecStart = "${runLockScreen}";
+      };
+    };
 
     systemd.user.services.swayidle-lockscreen = {
       Unit = {
