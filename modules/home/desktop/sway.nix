@@ -344,6 +344,7 @@ in
           "type:touchpad" = {
             tap = "enabled";
             natural_scroll = "enabled";
+            events = "disabled_on_external_mouse";
           };
         };
 
