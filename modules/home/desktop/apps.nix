@@ -20,26 +20,11 @@ in
   config = lib.mkIf cfg.enable {
     home.packages =
       # optionalPkg "bitwarden-desktop"
-      optionalPkg "file-roller"
-      ++ optionalPkg "gnome-calculator"
-      ++ optionalPkg "gnome-calendar"
-      ++ optionalPkg "gnome-disk-utility"
-      ++ optionalPkg "gnome-system-monitor"
-      ++ optionalPkg "libreoffice-fresh"
-      ++ optionalPkg "loupe"
+      optionalPkg "libreoffice-fresh"
       ++ optionalPkg "mediaelch"
-      ++ optionalPkg "networkmanagerapplet"
-      ++ optionalPkg "pavucontrol"
-      ++ optionalPkg "papers"
       ++ optionalPkg "qutebrowser"
-      ++ optionalPkg "snapshot"
-      ++ optionalPkg "decibels"
-      ++ optionalPkg "showtime"
-      ++ optionalPkg "mission-center"
       ++ optionalPkg "thunderbird"
-      ++ optionalPkg "thunar"
       ++ optionalPkg "zotero"
-      ++ lib.optional (lib.hasAttrByPath [ "kdePackages" "okular" ] pkgs) pkgs.kdePackages.okular
       ++ optionalPkg "prismlauncher";
   };
 }
