@@ -25,11 +25,19 @@ in
       };
       upower.enable = true;
       power-profiles-daemon.enable = true;
+      gvfs.enable = true;
+      udisks2.enable = true;
     };
 
     hardware.bluetooth.enable = true;
 
+    security.polkit.enable = true;
     security.pam.services.swaylock = { };
+
+    xdg.portal = {
+      enable = true;
+      wlr.enable = true;
+    };
 
     environment.systemPackages = with pkgs; [
       sway

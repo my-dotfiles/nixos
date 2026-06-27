@@ -10,6 +10,7 @@ let
   mod = "Mod4";
   terminal = "alacritty";
   menu = "fuzzel";
+  fileManager = "xdg-open ${config.home.homeDirectory}";
   primaryOutput = "DP-1";
   laptopOutput = "eDP-1";
   flclashAppId = "com.follow.clash";
@@ -147,15 +148,21 @@ in
   config = lib.mkIf cfg.enable {
     home.packages = with pkgs; [
       closeWindow
+      blueman
       flclashGui
       fuzzel
       jq
+      libnotify
       mako
+      networkmanagerapplet
+      pavucontrol
       (screenshot "area")
       (screenshot "edit")
       (screenshot "screen")
       (screenshot "window")
       swaybg
+      wdisplays
+      xdg-utils
     ];
 
     xdg.dataFile."applications/flclash.desktop".text = ''
@@ -201,6 +208,8 @@ in
         # 使用短字符而不是大图标，避免状态栏变宽或依赖特定图标字体。
         alacritty = "T";
         Alacritty = "T";
+        dolphin = "F";
+        "org.kde.dolphin" = "F";
         firefox = "W";
         "org.mozilla.firefox" = "W";
         qutebrowser = "W";
@@ -369,6 +378,8 @@ in
 
         startup = [
           { command = "fcitx5 -d"; }
+          { command = "nm-applet --indicator"; }
+          { command = "blueman-applet"; }
           { command = "${setWallpaper}"; }
           {
             command = "dbus-update-activation-environment --systemd WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP GTK_IM_MODULE QT_IM_MODULE XMODIFIERS INPUT_METHOD SDL_IM_MODULE LANG LC_CTYPE LC_ALL";
@@ -416,6 +427,7 @@ in
 
           "${mod}+Return" = "exec ${terminal}";
           "${mod}+d" = "exec ${menu}";
+          "${mod}+Shift+f" = "exec ${fileManager}";
           "${mod}+Shift+q" = "exec close-sway-window";
           "${mod}+Shift+c" = "reload";
           "${mod}+Shift+e" =
@@ -436,6 +448,10 @@ in
           "${mod}+r" = "mode resize";
 
           "${mod}+Alt+l" = "exec lock-screen";
+          "${mod}+Shift+a" = "exec pavucontrol";
+          "${mod}+Shift+b" = "exec blueman-manager";
+          "${mod}+Shift+d" = "exec wdisplays";
+          "${mod}+Shift+n" = "exec nm-connection-editor";
 
           "--locked XF86AudioMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
           "--locked XF86AudioLowerVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-";
