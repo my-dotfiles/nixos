@@ -11,8 +11,6 @@ in
       enable = true;
       settings = {
         env.WINIT_UNIX_BACKEND = "wayland";
-        window.blur = true;
-        window.opacity = 0.95;
         font = {
           size = 13;
           normal.family = "Iosevka Nerd Font Mono";
