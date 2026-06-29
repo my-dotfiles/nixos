@@ -53,7 +53,7 @@
 (dolist (theme-library '("gruvbox-dark-hard-theme" "ef-themes"))
   (add-to-list 'custom-theme-load-path
                (file-name-directory (locate-library theme-library))))
-(load-theme 'ef-owl t)
+(load-theme 'ef-bio t)
 
 (defconst yurikon/terminal-transparent-background-faces
   '(default
@@ -140,6 +140,10 @@
 (recentf-mode 1)
 (global-auto-revert-mode 1)
 (delete-selection-mode 1)
+(repeat-mode 1)
+(winner-mode 1)
+(when (fboundp 'global-so-long-mode)
+  (global-so-long-mode 1))
 (require 'which-key)
 (which-key-mode 1)
 
@@ -321,6 +325,8 @@
 (add-to-list 'eglot-server-programs
              '((yaml-mode yaml-ts-mode) . ("yaml-language-server" "--stdio")))
 (add-to-list 'eglot-server-programs
+             '(nix-mode . ("nixd")))
+(add-to-list 'eglot-server-programs
              '((python-mode python-ts-mode)
                "basedpyright-langserver" "--stdio"))
 (add-to-list 'eglot-server-programs
@@ -330,6 +336,12 @@
                   "--clang-tidy"
                   "--query-driver=/nix/store/**/bin/clang,/nix/store/**/bin/clang++,/nix/store/**/bin/gcc,/nix/store/**/bin/g++")))
 
+(with-eval-after-load 'eglot
+  (keymap-set eglot-mode-map "C-c l a" #'eglot-code-actions)
+  (keymap-set eglot-mode-map "C-c l r" #'eglot-rename)
+  (keymap-set eglot-mode-map "C-c l f" #'eglot-format-buffer)
+  (keymap-set eglot-mode-map "C-c l o" #'eglot-code-action-organize-imports))
+
 (require 'nix-mode)
 (require 'markdown-mode)
 (require 'yaml-mode)
@@ -337,13 +349,7 @@
 (require 'ocaml-eglot)
 
 ;; Syntax checks.
-(require 'flycheck)
-(global-flycheck-mode 1)
-(with-eval-after-load 'flycheck
-  (require 'flycheck-package)
-  (flycheck-package-setup)
-  (flycheck-add-next-checker 'emacs-lisp 'emacs-lisp-checkdoc)
-  (flycheck-add-next-checker 'emacs-lisp-checkdoc 'emacs-lisp-package))
+(add-hook 'prog-mode-hook #'flymake-mode)
 
 ;; Elisp editing support.
 (require 'package-lint)
@@ -360,7 +366,7 @@
   "Configure local tooling for Emacs Lisp buffers."
   (setq-local indent-tabs-mode nil)
   (setq-local tab-width 2)
-  (flycheck-mode 1)
+  (flymake-mode 1)
   (keymap-local-set "C-c e e" #'yurikon/emacs-lisp-run-elsa))
 
 (add-hook 'emacs-lisp-mode-hook #'yurikon/emacs-lisp-setup)

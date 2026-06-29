@@ -63,8 +63,6 @@ in
           embark-consult
           envrc
           rainbow-delimiters
-          flycheck
-          flycheck-package
           package-lint
           prescient
           corfu-prescient
