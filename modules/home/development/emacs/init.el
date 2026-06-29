@@ -177,8 +177,6 @@
 (global-set-key (kbd "C-c f") #'project-find-file)
 (global-set-key (kbd "C-c s") #'consult-ripgrep)
 
-(setq xref-show-xrefs-function #'consult-xref
-      xref-show-definitions-function #'consult-xref)
 (require 'magit)
 (global-set-key (kbd "C-c g") #'magit-status)
 
@@ -316,8 +314,10 @@
 (setq corfu-popupinfo-delay '(0.5 . 0.2))
 
 ;; Built-in project and LSP support.
+(require 'xref)
 (require 'eglot)
 (setq xref-search-program 'ripgrep
+      xref-show-definitions-function #'xref-show-definitions-completing-read
       eglot-autoshutdown t
       eglot-events-buffer-config '(:size 0 :format full))
 (add-to-list 'eglot-server-programs
