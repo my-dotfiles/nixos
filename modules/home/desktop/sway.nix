@@ -153,7 +153,6 @@ in
       fuzzel
       jq
       libnotify
-      mako
       networkmanagerapplet
       pavucontrol
       (screenshot "area")
@@ -179,6 +178,7 @@ in
 
     services.mako = {
       enable = true;
+      package = null;
       settings = {
         font = "Sans 10";
         width = 420;
@@ -378,6 +378,7 @@ in
 
         startup = [
           { command = "fcitx5 -d"; }
+          { command = "${lib.getExe pkgs.mako}"; }
           { command = "nm-applet --indicator"; }
           { command = "blueman-applet"; }
           { command = "${setWallpaper}"; }

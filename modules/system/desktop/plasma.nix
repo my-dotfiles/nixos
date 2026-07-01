@@ -59,7 +59,15 @@ in
 
     xdg.portal = {
       enable = true;
-      extraPortals = [ pkgs.kdePackages.xdg-desktop-portal-kde ];
+      config.kde = {
+        default = [ "kde" ];
+        "org.freedesktop.impl.portal.Notification" = [ "plasmanotify" ];
+        "org.freedesktop.impl.portal.Secret" = [ "kwallet" ];
+        "org.freedesktop.impl.portal.Settings" = [
+          "kde"
+          "gtk"
+        ];
+      };
       xdgOpenUsePortal = true;
     };
 
@@ -70,7 +78,6 @@ in
       kdePackages.oxygen-sounds
 
       # Plasma shell integration.
-      kdePackages.bluedevil
       kdePackages.kde-cli-tools
       kdePackages.kde-gtk-config
       kdePackages.kdialog

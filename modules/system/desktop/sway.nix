@@ -36,7 +36,15 @@ in
 
     xdg.portal = {
       enable = true;
+      extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
       wlr.enable = true;
+      config.sway = {
+        default = lib.mkForce [
+          "wlr"
+          "gtk"
+        ];
+        "org.freedesktop.impl.portal.FileChooser" = [ "gtk" ];
+      };
     };
 
     environment.systemPackages = with pkgs; [
@@ -52,7 +60,6 @@ in
       playerctl
       fuzzel
       alacritty
-      mako
       wev
     ];
   };
