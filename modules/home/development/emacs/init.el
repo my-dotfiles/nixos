@@ -210,6 +210,7 @@
 ;; In-buffer completion. Works well in terminal and GUI.
 (require 'corfu)
 (require 'cape)
+(setq global-corfu-modes '((not comint-mode gud-mode) t))
 (global-corfu-mode 1)
 (setq corfu-auto t
       corfu-auto-delay 0.2
@@ -219,6 +220,15 @@
 (keymap-set corfu-map "TAB" #'corfu-next)
 (keymap-set corfu-map "<backtab>" #'corfu-previous)
 (keymap-set corfu-map "RET" #'corfu-insert)
+
+(defun yurikon/gud-corfu-setup ()
+  "Show GUD completions with Corfu only when completion is requested."
+  (setq-local corfu-auto nil)
+  (corfu-mode 1)
+  (keymap-local-set "TAB" #'completion-at-point)
+  (keymap-local-set "C-i" #'completion-at-point))
+
+(add-hook 'gud-mode-hook #'yurikon/gud-corfu-setup)
 
 ;; use corfu completion in terminal
 (unless (display-graphic-p)
