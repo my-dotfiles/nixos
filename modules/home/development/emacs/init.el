@@ -381,6 +381,10 @@
 (setq org-directory "/home/yurikon/Learning/org-learning"
       org-default-notes-file (expand-file-name "notes.org" org-directory))
 (make-directory org-directory t)
+(defconst yurikon/org-quick-notes-directory
+  (expand-file-name "00-quick/" org-directory)
+  "Directory for short-lived Org notes before they are moved elsewhere.")
+(make-directory yurikon/org-quick-notes-directory t)
 
 (require 'ox-publish)
 
@@ -394,7 +398,7 @@
          :with-creator nil
          :section-numbers t
          :time-stamp-file t
-         :exclude "public\\|\\.git\\|\\.obsidian\\|org-roam\\.db")))
+         :exclude "public\\|00-quick\\|\\.git\\|\\.obsidian\\|org-roam\\.db")))
 
 (require 'org-roam)
 (setq org-roam-directory (file-truename org-directory)
@@ -402,7 +406,7 @@
       org-roam-completion-everywhere t
       org-roam-capture-templates
       '(("d" "default" plain "%?"
-         :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
+         :target (file+head "00-quick/%<%Y%m%d%H%M%S>-${slug}.org"
                             "#+title: ${title}\n")
          :unnarrowed t)))
 (make-directory org-roam-directory t)
