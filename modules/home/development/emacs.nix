@@ -24,6 +24,7 @@ in
           corfu-terminal
           gruvbox-theme
           ef-themes
+          modus-themes
           magit
           marginalia
           markdown-mode

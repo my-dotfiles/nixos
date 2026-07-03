@@ -50,10 +50,31 @@
 (unless (display-graphic-p)
   (global-kkp-mode 1))
 
-(dolist (theme-library '("gruvbox-dark-hard-theme" "ef-themes"))
+(dolist (theme-library '("gruvbox-dark-hard-theme" "ef-themes" "modus-themes"))
   (add-to-list 'custom-theme-load-path
                (file-name-directory (locate-library theme-library))))
-(load-theme 'ef-bio t)
+
+(defconst yurikon/light-theme 'modus-operandi
+  "Theme used by `switch-theme' for daytime editing.")
+
+(defconst yurikon/dark-theme 'ef-bio
+  "Theme used by `switch-theme' for nighttime editing.")
+
+(defun yurikon/load-theme (theme)
+  "Disable active themes, then load THEME."
+  (mapc #'disable-theme custom-enabled-themes)
+  (load-theme theme t))
+
+(defun switch-theme ()
+  "Switch between `yurikon/light-theme' and `yurikon/dark-theme'."
+  (interactive)
+  (let ((theme (if (memq yurikon/dark-theme custom-enabled-themes)
+                   yurikon/light-theme
+                 yurikon/dark-theme)))
+    (yurikon/load-theme theme)
+    (message "Switched to %s" theme)))
+
+(yurikon/load-theme yurikon/light-theme)
 
 (defconst yurikon/terminal-transparent-background-faces
   '(default
