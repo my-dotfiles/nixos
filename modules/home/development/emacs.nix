@@ -31,6 +31,7 @@ in
           nix-mode
           org-roam
           orderless
+          pdf-tools
           (treesit-grammars.with-grammars (
             grammars: with grammars; [
               tree-sitter-bash

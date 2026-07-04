@@ -3,8 +3,7 @@
 ;; This config keeps the normal Emacs editing model. Packages are provided
 ;; by Nix, so Emacs does not refresh archives or install packages at startup.
 ;;; Code
-(setq package-enable-at-startup nil
-      package-quickstart nil)
+(setq package-quickstart nil)
 
 (setq inhibit-startup-screen t
       ring-bell-function 'ignore
@@ -144,6 +143,8 @@
 
 ;; Use relative line numbers
 (setq display-line-numbers-type 'relative)
+(when (boundp 'display-line-numbers-exempt-modes)
+  (add-to-list 'display-line-numbers-exempt-modes 'pdf-view-mode))
 
 (global-display-line-numbers-mode 1)
 (yurikon/terminal-transparent-background)
@@ -231,7 +232,8 @@
 ;; In-buffer completion. Works well in terminal and GUI.
 (require 'corfu)
 (require 'cape)
-(setq global-corfu-modes '((not comint-mode gud-mode) t))
+(setq global-corfu-modes '((not comint-mode gud-mode) t)
+      global-corfu-minibuffer nil)
 (global-corfu-mode 1)
 (setq corfu-auto t
       corfu-auto-delay 0.2
@@ -496,6 +498,16 @@ ensures clangd is resolved from the project's dev shell before Eglot starts."
 (add-hook 'markdown-mode-hook #'visual-line-mode)
 (add-hook 'gfm-mode-hook #'visual-line-mode)
 (add-hook 'org-mode-hook #'visual-line-mode)
+
+;; PDF reading inside Emacs.
+(require 'pdf-tools)
+(add-to-list 'pdf-tools-enabled-modes 'pdf-view-auto-slice-minor-mode)
+(pdf-tools-install t nil t)
+(setq-default pdf-view-display-size 'fit-page)
+(add-hook 'pdf-view-mode-hook
+          (lambda ()
+            (display-line-numbers-mode 0)
+            (auto-revert-mode 1)))
 
 ;; Fast Jump
 (require 'avy)
