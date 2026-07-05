@@ -27,6 +27,7 @@
 
     services = {
       docker.enable = true;
+      flatpak.enable = true;
       jellyfin.enable = true;
       openssh.enable = true;
       pipewire.enable = true;

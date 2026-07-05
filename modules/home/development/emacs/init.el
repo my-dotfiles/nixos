@@ -199,6 +199,10 @@
 (global-set-key (kbd "C-c f") #'project-find-file)
 (global-set-key (kbd "C-c s") #'consult-ripgrep)
 
+;; Use grep-mode with ripgrep output, keeping Emacs' built-in next-error workflow.
+(setq grep-command "rg --vimgrep --smart-case --hidden --glob '!.git' "
+      grep-use-null-device nil)
+
 (require 'magit)
 (global-set-key (kbd "C-c g") #'magit-status)
 

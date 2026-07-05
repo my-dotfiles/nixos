@@ -11,6 +11,7 @@
     ../desktop/thunar.nix
     ../services/jellyfin.nix
     ../services/docker.nix
+    ../services/flatpak.nix
     ../services/openssh.nix
     ../services/pipewire.nix
     ../services/printing.nix

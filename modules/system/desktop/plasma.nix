@@ -33,7 +33,6 @@ in
       greetd.enable = lib.mkForce false;
       upower.enable = true;
       power-profiles-daemon.enable = true;
-      flatpak.enable = true;
       gvfs.enable = true;
       udisks2.enable = true;
 
@@ -100,6 +99,7 @@ in
       # Core Plasma applications.
       kdePackages.ark
       kdePackages.dolphin
+      kdePackages.discover
       kdePackages.kate
       kdePackages.kcalc
       kdePackages.kcharselect
@@ -133,7 +133,6 @@ in
       kdePackages.yakuake
       haruna
 
-      flatpak
       wl-clipboard
     ];
   };

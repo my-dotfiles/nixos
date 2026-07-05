@@ -26,5 +26,6 @@ in
       ++ optionalPkg "thunderbird"
       ++ optionalPkg "zotero"
       ++ optionalPkg "prismlauncher";
+    
   };
 }
