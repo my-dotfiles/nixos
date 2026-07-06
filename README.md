@@ -27,22 +27,31 @@ modules/home/profiles/macos.nix   macOS profile，集中启用模块。
 在 macOS 上 clone 或进入这个 worktree 后，首次安装 nix-darwin：
 
 ```sh
-sudo nix run nix-darwin/master#darwin-rebuild -- switch --flake path:$PWD#yurikon-macos
+sudo -H nix run nix-darwin/master#darwin-rebuild -- switch --flake path:$PWD#yurikon-macos
 ```
 
 Intel Mac 使用：
 
 ```sh
-sudo nix run nix-darwin/master#darwin-rebuild -- switch --flake path:$PWD#yurikon-macos-x86_64
+sudo -H nix run nix-darwin/master#darwin-rebuild -- switch --flake path:$PWD#yurikon-macos-x86_64
 ```
 
 后续可以使用已安装的 `darwin-rebuild`：
 
 ```sh
-sudo darwin-rebuild switch --flake path:$PWD#yurikon-macos
+sudo -H darwin-rebuild switch --flake path:$PWD#yurikon-macos
 ```
 
 使用 `path:` 是有意的，它能看到尚未加入 Git 的本地模块。
+
+如果首次 activation 报告 `/etc` 下已有文件会被覆盖，例如 `/etc/bashrc`，先确认文件里
+没有手写的重要配置，再按提示保留备份：
+
+```sh
+sudo mv /etc/bashrc /etc/bashrc.before-nix-darwin
+```
+
+随后重新运行 `darwin-rebuild switch`。
 
 ## 检查和格式化
 
@@ -59,7 +68,8 @@ nixfmt flake.nix home.nix hosts/**/*.nix modules/**/*.nix
 
 - Emacs 配置和 Nix 管理的 Emacs package 集合。
 - nix-darwin 系统入口、Nix daemon 设置、少量 macOS defaults。
-- Homebrew 由 nix-darwin 接管，但 activation 不会自动更新、升级或清理已有 Brew 软件。
+- Homebrew 由 nix-darwin 接管，当前先声明已有 tap、formula 和 cask 清单；activation
+  不会自动更新、升级或清理已有 Brew 软件。
 - Nix、shell、Git/GitHub、tmux、yazi、lazygit、fzf、direnv 等 CLI 工作流。
 - 常用开发工具和语言服务器。
 - 用户字体和 fontconfig。
@@ -74,6 +84,10 @@ nixfmt flake.nix home.nix hosts/**/*.nix modules/**/*.nix
 Emacs 在 macOS 上使用 Nixpkgs 的 `emacs30-macport`。这比通用 `emacs` 更贴近
 macOS GUI，同时仍能让 Nix 管理 Emacs package 集合。Homebrew 已接入，适合后续接管
 不适合 Nix 管的 GUI App；当前没有擅自迁移浏览器或已有 Brew 软件。
+
+Homebrew 清单目前偏保守，目标是让首次 `darwin-rebuild` 先可运行。后续减少
+Homebrew 依赖时，优先把已由 Home Manager 管理的 CLI formula 从 `brews` 中分批移除；
+GUI App、字体 cask、macFUSE 和其他 macOS 原生组件再单独评估。
 
 ## 模块约定
 
