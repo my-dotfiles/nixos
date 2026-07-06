@@ -81,13 +81,20 @@ nixfmt flake.nix home.nix hosts/**/*.nix modules/**/*.nix
 - NixOS 系统配置、硬件配置、Wayland/Sway/Niri、fcitx5、MIME、lockscreen。
 - sops secret、邮件同步、rclone/systemd 服务。
 
-Emacs 在 macOS 上使用 Nixpkgs 的 `emacs30-macport`，并通过 Home Manager 的
-`targets.darwin.copyApps` 暴露到 `~/Applications/Home Manager Apps`。这比通用
-`emacs` 更贴近 macOS GUI，同时仍能让 Nix 管理 Emacs package 集合。已排查过
-Homebrew 方案：`railwaycat/emacsmacport/emacs-mac` 当前是 Emacs 29 Mac port，
-`d12frosted/emacs-plus/emacs-plus@30` 和 `emacs-app` 是 Emacs 30.2；当前 Nix
-`emacs30-macport` 是 30.2.50，且能直接复用 Nix 管理的 elisp/tree-sitter 包，因此暂不
-切到 Brew Emacs。
+默认 shell 由 nix-darwin 设置为 Nix 管理的 fish，Home Manager 也会把用户会话里的
+`SHELL` 指向同一个 fish。切换后可以用下面的命令确认：
+
+```sh
+dscl . -read /Users/yurikon UserShell
+echo $SHELL
+fish --version
+```
+
+Emacs 在 macOS 上使用 Homebrew formula `d12frosted/emacs-plus/emacs-plus@30` 提供
+更贴近 macOS 的 GUI binary；Home Manager 继续管理 `~/.emacs`、
+`~/.emacs.d/init.el`、`early-init.el` 和 `~/.local/bin/emacs*` wrapper。elisp 包不再
+由 Brew Emacs 启动时联网安装，而是由 Nix 用 `pkgs.emacs30` 生成 ELPA package closure，
+再在 `init.el` 中加入 `package-directory-list`。
 
 Homebrew 清单已经从首次迁移用的全量快照收窄为 macOS 应用层和少量快速更新工具。
 Homebrew 模块提供几个迁移阶段开关：

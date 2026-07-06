@@ -3,15 +3,22 @@
 let
   cfg = config.myDarwin.apps.homebrew;
 
-  legacyEmacsTaps = [
+  emacsPlusTap = [
     {
       name = "d12frosted/emacs-plus";
       trusted = true;
     }
+  ];
+
+  legacyEmacsTaps = [
     {
       name = "railwaycat/emacsmacport";
       trusted = true;
     }
+  ];
+
+  emacsFormulae = [
+    "emacs-plus"
   ];
 
   # Keep only fast-moving or ecosystem-managed CLI tools in Homebrew. General
@@ -67,7 +74,7 @@ in
     includeLegacyEmacsTaps = lib.mkOption {
       type = lib.types.bool;
       default = false;
-      description = "Keep legacy Emacs Homebrew taps declared until the Nix-managed Emacs setup has fully replaced them.";
+      description = "Keep legacy Emacs Homebrew taps declared while comparing macOS-specific Emacs variants.";
     };
   };
 
@@ -97,8 +104,8 @@ in
 
       greedyCasks = false;
 
-      taps = lib.optionals cfg.includeLegacyEmacsTaps legacyEmacsTaps;
-      brews = lib.optionals cfg.includeFormulae formulae;
+      taps = emacsPlusTap ++ lib.optionals cfg.includeLegacyEmacsTaps legacyEmacsTaps;
+      brews = emacsFormulae ++ lib.optionals cfg.includeFormulae formulae;
       casks = guiCasks ++ fontCasks ++ systemCasks;
       masApps = { };
     };

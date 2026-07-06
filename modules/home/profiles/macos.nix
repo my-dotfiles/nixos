@@ -8,6 +8,7 @@
     ../cli/fish.nix
     ../cli/git.nix
     ../cli/github.nix
+    ../cli/ghostty.nix
     ../cli/prompt.nix
     ../cli/ssh.nix
     ../cli/terminal.nix
@@ -29,7 +30,7 @@
 
   myHome.cli.fish = {
     enable = true;
-    setSessionShell = false;
+    setSessionShell = true;
   };
   myHome.cli.git = {
     enable = true;
@@ -37,6 +38,7 @@
     userEmail = "h6606797@gmail.com";
   };
   myHome.cli.github.enable = true;
+  myHome.cli.ghostty.enable = true;
   myHome.cli.prompt.enable = true;
   myHome.cli.ssh.enable = true;
   myHome.cli.terminal.enable = true;

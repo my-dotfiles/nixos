@@ -8,8 +8,8 @@
 let
   cfg = config.myHome.development.emacs;
   emacsBase =
-    if pkgs.stdenv.isDarwin && pkgs ? emacs30-macport then
-      pkgs.emacs30-macport
+    if pkgs.stdenv.isDarwin && pkgs ? emacs30 then
+      pkgs.emacs30
     else if pkgs.stdenv.isLinux && pkgs ? emacs-pgtk then
       pkgs.emacs-pgtk
     else
@@ -22,6 +22,89 @@ let
     in
     lib.optional (value != null && lib.meta.availableOn pkgs.stdenv.hostPlatform value) value;
   optionalEmacsPkg = pkg: lib.optional (lib.meta.availableOn pkgs.stdenv.hostPlatform pkg) pkg;
+  emacsPackageList =
+    epkgs:
+    with epkgs;
+    [
+      cape
+      consult
+      corfu
+      corfu-terminal
+      gruvbox-theme
+      ef-themes
+      modus-themes
+      magit
+      marginalia
+      markdown-mode
+      nix-mode
+      org-roam
+      orderless
+      (treesit-grammars.with-grammars (
+        grammars: with grammars; [
+          tree-sitter-bash
+          tree-sitter-c
+          tree-sitter-c-sharp
+          tree-sitter-cmake
+          tree-sitter-cpp
+          tree-sitter-css
+          tree-sitter-dockerfile
+          tree-sitter-go
+          tree-sitter-gomod
+          tree-sitter-html
+          tree-sitter-java
+          tree-sitter-javascript
+          tree-sitter-json
+          tree-sitter-python
+          tree-sitter-ruby
+          tree-sitter-rust
+          tree-sitter-toml
+          tree-sitter-tsx
+          tree-sitter-typescript
+          tree-sitter-yaml
+        ]
+      ))
+      vertico
+      which-key
+      htmlize
+
+      avy
+      embark
+      embark-consult
+      envrc
+      rainbow-delimiters
+      package-lint
+      prescient
+      corfu-prescient
+      vertico-prescient
+      elsa
+      helpful
+      multiple-cursors
+
+      tempel
+      tempel-collection
+
+      tuareg
+      ocaml-eglot
+
+      yaml-mode
+
+      nerd-icons
+      nerd-icons-completion
+      nerd-icons-dired
+
+      kkp
+    ]
+    ++ lib.optionals cfg.enablePdfTools (optionalEmacsPkg pdf-tools)
+    ++ lib.optionals cfg.enableMail (optionalEmacsPkg mu4e ++ optionalEmacsPkg org-mime);
+  emacsPackageEnv = pkgs.buildEnv {
+    name = "emacs-elpa-packages";
+    paths = emacsPackageList emacsPackages;
+    pathsToLink = [ "/share/emacs/site-lisp" ];
+    ignoreCollisions = true;
+  };
+  emacsWithPackages = emacsPackages.emacsWithPackages emacsPackageList;
+  homebrewPrefix = if pkgs.stdenv.hostPlatform.isAarch64 then "/opt/homebrew" else "/usr/local";
+  emacsPlusPrefix = "${homebrewPrefix}/opt/emacs-plus@30";
   copyCommand = if pkgs.stdenv.isDarwin then "pbcopy" else lib.getExe' pkgs.wl-clipboard "wl-copy";
   copyArgs = if pkgs.stdenv.isDarwin then "" else "\"--type\" \"text/plain\"";
   openCommand = if pkgs.stdenv.isDarwin then "open" else "xdg-open";
@@ -99,6 +182,16 @@ let
       ''
     else
       "";
+  packageBootstrap = ''
+    ;; Editor packages are built by Nix. Homebrew emacs-plus supplies only the
+    ;; macOS application and command-line binaries.
+    (require 'package)
+    (setq package-enable-at-startup nil
+          package-archives nil
+          package-directory-list
+          '("${emacsPackageEnv}/share/emacs/site-lisp/elpa"))
+    (package-initialize)
+  '';
   initEl =
     builtins.replaceStrings
       [
@@ -107,6 +200,7 @@ let
         "@open-command@"
         "@mail-config@"
         "@pdf-tools-config@"
+        "@package-bootstrap@"
       ]
       [
         copyCommand
@@ -114,6 +208,7 @@ let
         openCommand
         mailConfig
         pdfToolsConfig
+        packageBootstrap
       ]
       (builtins.readFile ./emacs/init.el);
 in
@@ -131,83 +226,27 @@ in
   config = lib.mkIf cfg.enable (
     lib.mkMerge [
       {
-        programs.emacs = {
+        programs.emacs = lib.mkIf (!pkgs.stdenv.isDarwin) {
           enable = true;
-          package = emacsPackages.emacsWithPackages (
-            epkgs:
-            with epkgs;
-            [
-              cape
-              consult
-              corfu
-              corfu-terminal
-              gruvbox-theme
-              ef-themes
-              modus-themes
-              magit
-              marginalia
-              markdown-mode
-              nix-mode
-              org-roam
-              orderless
-              (treesit-grammars.with-grammars (
-                grammars: with grammars; [
-                  tree-sitter-bash
-                  tree-sitter-c
-                  tree-sitter-c-sharp
-                  tree-sitter-cmake
-                  tree-sitter-cpp
-                  tree-sitter-css
-                  tree-sitter-dockerfile
-                  tree-sitter-go
-                  tree-sitter-gomod
-                  tree-sitter-html
-                  tree-sitter-java
-                  tree-sitter-javascript
-                  tree-sitter-json
-                  tree-sitter-python
-                  tree-sitter-ruby
-                  tree-sitter-rust
-                  tree-sitter-toml
-                  tree-sitter-tsx
-                  tree-sitter-typescript
-                  tree-sitter-yaml
-                ]
-              ))
-              vertico
-              which-key
-              htmlize
+          package = emacsWithPackages;
+        };
 
-              avy
-              embark
-              embark-consult
-              envrc
-              rainbow-delimiters
-              package-lint
-              prescient
-              corfu-prescient
-              vertico-prescient
-              elsa
-              helpful
-              multiple-cursors
+        home.file.".local/bin/emacs" = lib.mkIf pkgs.stdenv.isDarwin {
+          executable = true;
+          text = ''
+            #!/usr/bin/env bash
 
-              tempel
-              tempel-collection
+            exec ${emacsPlusPrefix}/bin/emacs --init-directory "$HOME/.emacs.d" "$@"
+          '';
+        };
 
-              tuareg
-              ocaml-eglot
+        home.file.".local/bin/emacsclient" = lib.mkIf pkgs.stdenv.isDarwin {
+          executable = true;
+          text = ''
+            #!/usr/bin/env bash
 
-              yaml-mode
-
-              nerd-icons
-              nerd-icons-completion
-              nerd-icons-dired
-
-              kkp
-            ]
-            ++ lib.optionals cfg.enablePdfTools (optionalEmacsPkg pdf-tools)
-            ++ lib.optionals cfg.enableMail (optionalEmacsPkg mu4e ++ optionalEmacsPkg org-mime)
-          );
+            exec ${emacsPlusPrefix}/bin/emacsclient "$@"
+          '';
         };
 
         home.packages =
@@ -222,7 +261,7 @@ in
             [ "sqlite" ]
           ]
           ++ lib.optionals pkgs.stdenv.isLinux (optionalPkg [ "wl-clipboard" ])
-          ++ optionalEmacsPkg emacsPackages.elsa;
+          ++ lib.optionals (!pkgs.stdenv.isDarwin) (optionalEmacsPkg emacsPackages.elsa);
 
         home.file.".emacs.d/init.el".text = initEl;
 

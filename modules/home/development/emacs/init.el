@@ -1,9 +1,11 @@
 ;;; init.el --- Small GUI-first Emacs configuration -*- lexical-binding: t; -*-
 
-;; This config keeps the normal Emacs editing model. Packages are provided
-;; by Nix, so Emacs does not refresh archives or install packages at startup.
+;; This config keeps the normal Emacs editing model. Package setup is injected
+;; by Home Manager so macOS and Linux can use different Emacs providers.
 ;;; Code
 (setq package-quickstart nil)
+
+@package-bootstrap@
 
 (setq inhibit-startup-screen t
       ring-bell-function 'ignore
@@ -20,6 +22,10 @@
 
 (set-language-environment "UTF-8")
 (prefer-coding-system 'utf-8)
+
+(require 'server)
+(unless (server-running-p)
+  (server-start))
 
 (add-to-list 'default-frame-alist '(font . "Iosevka Nerd Font Mono-13"))
 (add-to-list 'default-frame-alist '(tool-bar-lines . 0))
