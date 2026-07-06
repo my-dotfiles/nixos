@@ -55,4 +55,9 @@
   myHome.development.codex.enable = true;
 
   myHome.desktop.fonts.enable = true;
+
+  targets.darwin.copyApps = {
+    enable = true;
+    directory = "Applications/Home Manager Apps";
+  };
 }

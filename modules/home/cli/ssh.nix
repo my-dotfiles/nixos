@@ -27,6 +27,19 @@ in
           RequestTTY = "yes";
           RemoteCommand = "TERM=xterm-256color exec $SHELL -l";
         };
+
+        nixos = {
+          hostname = "100.115.153.98";
+          user = "yurikon";
+        };
+
+        autodl = {
+          hostname = "connect.nmb1.seetacloud.com";
+          user = "root";
+          port = 48156;
+          identityFile = [ "~/.ssh/id_ed25519_gpu" ];
+          identitiesOnly = true;
+        };
       };
     };
   };

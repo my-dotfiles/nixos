@@ -14,52 +14,11 @@ let
     }
   ];
 
-  # Formulae currently installed through Homebrew. Many of these now overlap
-  # with Home Manager, but keeping them declared makes the first migration
-  # phase boring and reversible.
+  # Keep only fast-moving or ecosystem-managed CLI tools in Homebrew. General
+  # terminal utilities and language tools should live in Home Manager/Nix.
   formulae = [
-    "aria2"
-    "bat"
-    "cloc"
-    "cmake"
-    "direnv"
-    "dust"
-    "fastfetch"
-    "fd"
-    "fzf"
-    "gh"
-    "ghostscript"
-    "git-lfs"
-    "glow"
-    "helix"
-    "imagemagick"
-    "img2pdf"
-    "jdtls"
-    "jq"
-    "lazygit"
-    "librsvg"
-    "libvterm"
-    "mdcat"
-    "mosh"
-    "mpv"
-    "neovim"
-    "pandoc"
-    "poppler"
-    "pyright"
-    "ripgrep"
-    "ruff"
-    "rust"
-    "sevenzip"
-    "starship"
-    "tailscale"
-    "tig"
-    "tmux"
-    "unar"
     "uv"
-    "wget"
     "yarn"
-    "yazi"
-    "zoxide"
   ];
 
   guiCasks = [
@@ -81,6 +40,7 @@ let
 
   systemCasks = [
     "macfuse"
+    "tailscale"
   ];
 in
 {
@@ -94,19 +54,19 @@ in
         "uninstall"
         "zap"
       ];
-      default = "none";
+      default = "uninstall";
       description = "How nix-darwin should handle Homebrew packages absent from the generated Brewfile.";
     };
 
     includeFormulae = lib.mkOption {
       type = lib.types.bool;
       default = true;
-      description = "Keep the existing Homebrew formula inventory declared while CLI tools migrate to Nix.";
+      description = "Keep the small Homebrew formula set used for fast-moving tools.";
     };
 
     includeLegacyEmacsTaps = lib.mkOption {
       type = lib.types.bool;
-      default = true;
+      default = false;
       description = "Keep legacy Emacs Homebrew taps declared until the Nix-managed Emacs setup has fully replaced them.";
     };
   };
