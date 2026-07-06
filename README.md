@@ -67,7 +67,7 @@ nixfmt flake.nix home.nix hosts/**/*.nix modules/**/*.nix
 已迁移：
 
 - Emacs 配置和 Nix 管理的 Emacs package 集合。
-- nix-darwin 系统入口、Nix daemon 设置、少量 macOS defaults。
+- nix-darwin 系统入口、Determinate Nix 兼容设置、常用 macOS defaults。
 - Homebrew 由 nix-darwin 接管，当前先声明已有 tap、formula 和 cask 清单；activation
   不会自动更新、升级或清理已有 Brew 软件。
 - Nix、shell、Git/GitHub、tmux、yazi、lazygit、fzf、direnv 等 CLI 工作流。
@@ -85,9 +85,18 @@ Emacs 在 macOS 上使用 Nixpkgs 的 `emacs30-macport`。这比通用 `emacs` �
 macOS GUI，同时仍能让 Nix 管理 Emacs package 集合。Homebrew 已接入，适合后续接管
 不适合 Nix 管的 GUI App；当前没有擅自迁移浏览器或已有 Brew 软件。
 
-Homebrew 清单目前偏保守，目标是让首次 `darwin-rebuild` 先可运行。后续减少
-Homebrew 依赖时，优先把已由 Home Manager 管理的 CLI formula 从 `brews` 中分批移除；
-GUI App、字体 cask、macFUSE 和其他 macOS 原生组件再单独评估。
+Homebrew 清单目前偏保守，目标是让首次 `darwin-rebuild` 先可运行。Homebrew 模块提供
+几个迁移阶段开关：
+
+- `myDarwin.apps.homebrew.includeFormulae`：暂时保留已有 formula 清单；当 CLI 工具由 Nix
+  覆盖并验证后，可以改为 `false`。
+- `myDarwin.apps.homebrew.includeLegacyEmacsTaps`：暂时保留旧 Emacs tap；确认不再需要 Brew
+  Emacs 后可以改为 `false`。
+- `myDarwin.apps.homebrew.cleanupMode`：默认 `"none"`；清单稳定后可先改为 `"check"`，
+  再考虑 `"uninstall"`，不要直接跳到 `"zap"`。
+
+当前 nix-darwin 已开始接管 Finder、Dock、截图、触控板、登录窗口和菜单栏时钟等 macOS
+defaults。更高风险的系统服务、网络、防火墙、隐私授权和浏览器状态暂不纳入。
 
 ## 模块约定
 

@@ -15,7 +15,7 @@ in
           hostname = "ssh.github.com";
           user = "git";
           port = 443;
-          identityFile = [ "~/.ssh/id_ed25519_new" ];
+          identityFile = [ "~/.ssh/id_ed25519" ];
           identitiesOnly = true;
           serverAliveInterval = 30;
           serverAliveCountMax = 3;
