@@ -21,7 +21,7 @@
 
     desktop.niri.enable = false;
     desktop.plasma.enable = true;
-    desktop.sway.enable = true;
+    desktop.sway.enable = false;
     desktop.thunar.enable = false;
     desktop.steam.enable = true;
 
@@ -38,5 +38,5 @@
     };
   };
 
-  services.displayManager.defaultSession = "sway";
+  services.displayManager.defaultSession = "plasma";
 }
