@@ -7,34 +7,40 @@
 
 let
   cfg = config.myHome.cli.terminal;
+  optionalPkg =
+    path:
+    let
+      value = lib.attrByPath path null pkgs;
+    in
+    lib.optional (value != null && lib.meta.availableOn pkgs.stdenv.hostPlatform value) value;
 in
 {
   options.myHome.cli.terminal.enable = lib.mkEnableOption "terminal utilities and shell integrations";
 
   config = lib.mkIf cfg.enable {
-    home.packages = with pkgs; [
-      ripgrep
-      bubblewrap
-      socat
-      fd
-      bat
-      eza
-      fzf
-      jq
-      fastfetch
-      tree
-      unzip
-      file
-      curl
-      wget
-      rsync
-      aria2
-      ncdu
-      dust
-      tokei
-      cloc
-      mdcat
-      pandoc
+    home.packages = lib.concatMap optionalPkg [
+      [ "ripgrep" ]
+      [ "bubblewrap" ]
+      [ "socat" ]
+      [ "fd" ]
+      [ "bat" ]
+      [ "eza" ]
+      [ "fzf" ]
+      [ "jq" ]
+      [ "fastfetch" ]
+      [ "tree" ]
+      [ "unzip" ]
+      [ "file" ]
+      [ "curl" ]
+      [ "wget" ]
+      [ "rsync" ]
+      [ "aria2" ]
+      [ "ncdu" ]
+      [ "dust" ]
+      [ "tokei" ]
+      [ "cloc" ]
+      [ "mdcat" ]
+      [ "pandoc" ]
     ];
 
     programs.bash = {
@@ -49,7 +55,7 @@ in
         g = "git";
         e = "emacsclient -n -c -a emacs";
         et = "emacsclient -t -a emacs";
-        hmconfig = "$EDITOR ~/nixos-config/home.nix";
+        hmconfig = "$EDITOR ~/nixos-config-macos/home.nix";
         reload = "source ~/.bashrc";
       };
 

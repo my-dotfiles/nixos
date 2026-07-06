@@ -7,147 +7,267 @@
 
 let
   cfg = config.myHome.development.emacs;
-  emacsPackages = pkgs.emacsPackagesFor pkgs.emacs-pgtk;
-  wlCopy = lib.getExe' pkgs.wl-clipboard "wl-copy";
+  emacsBase =
+    if pkgs.stdenv.isDarwin && pkgs ? emacs30-macport then
+      pkgs.emacs30-macport
+    else if pkgs.stdenv.isLinux && pkgs ? emacs-pgtk then
+      pkgs.emacs-pgtk
+    else
+      pkgs.emacs;
+  emacsPackages = pkgs.emacsPackagesFor emacsBase;
+  optionalPkg =
+    path:
+    let
+      value = lib.attrByPath path null pkgs;
+    in
+    lib.optional (value != null && lib.meta.availableOn pkgs.stdenv.hostPlatform value) value;
+  optionalEmacsPkg = pkg: lib.optional (lib.meta.availableOn pkgs.stdenv.hostPlatform pkg) pkg;
+  copyCommand = if pkgs.stdenv.isDarwin then "pbcopy" else lib.getExe' pkgs.wl-clipboard "wl-copy";
+  copyArgs = if pkgs.stdenv.isDarwin then "" else "\"--type\" \"text/plain\"";
+  openCommand = if pkgs.stdenv.isDarwin then "open" else "xdg-open";
+  mailConfig =
+    if cfg.enableMail then
+      ''
+        ;; use mu4e for mail frontend
+        (require 'mu4e)
+        (setq mail-user-agent 'mu4e-user-agent)
+        (setq mu4e-maildir "~/Mail")
+        (setq mu4e-get-mail-command "mbsync -a")
+        (setq mu4e-update-interval 600)
+        (setq mu4e-change-filenames-when-movin t)
+        (setq mu4e-view-open-program "${openCommand}")
+        (setq mu4e-attachment-dir "~/Downloads")
+
+        (require 'mailcap)
+        (setq mailcap-user-mime-data
+              '(("application/pdf" (viewer . "${openCommand} %s") (type . "application/pdf"))
+                ("application/octet-stream" (viewer . "${openCommand} %s") (type . "application/octet-stream"))
+                ("application/zip" (viewer . "${openCommand} %s") (type . "application/zip"))
+                ("application/vnd.*" (viewer . "${openCommand} %s") (type . "application/vnd.*"))
+                ("image/.*" (viewer . "${openCommand} %s") (type . "image/.*"))))
+        (mailcap-parse-mailcaps)
+        (dolist (mime-type '("application/pdf"
+                             "application/octet-stream"
+                             "application/zip"
+                             "application/vnd.*"))
+          (setq mm-inlined-types (delete mime-type mm-inlined-types)))
+
+        (setq message-send-mail-function 'message-send-mail-with-sendmail)
+        (setq sendmail-program "msmtp")
+        (setq message-sendmail-extra-arguments '("--read-envelope-from"))
+        (setq message-sendmail-f-is-evil t)
+        (setq message-kill-buffer-on-exit t)
+
+        (setq mu4e-contexts
+              (list
+              (make-mu4e-context
+               :name "gmail"
+               :match-func (lambda (msg)
+                             (when msg
+                               (string-prefix-p "/gmail" (mu4e-message-field msg :maildir))))
+               :vars '((user-mail-address . "h6606797@gmail.com")
+                       (user-full-name . "Yurikon")))
+              (make-mu4e-context
+               :name "qq"
+               :match-func (lambda (msg)
+                             (when msg
+                               (string-prefix-p "/qq" (mu4e-message-field msg :maildir))))
+               :vars '((user-mail-address . "3166701497@qq.com")
+                       (user-full-name . "郑彦文")))
+              (make-mu4e-context
+               :name "163"
+               :match-func (lambda (msg)
+                             (when msg
+                               (string-prefix-p "/netease163" (mu4e-message-field msg :maildir))))
+               :vars '((user-mail-address . "yuriisbest@163.com")
+                       (user-full-name . "Yurikon")))))
+      ''
+    else
+      "";
+  pdfToolsConfig =
+    if cfg.enablePdfTools then
+      ''
+        ;; PDF reading inside Emacs.
+        (require 'pdf-tools)
+        (add-to-list 'pdf-tools-enabled-modes 'pdf-view-auto-slice-minor-mode)
+        (pdf-tools-install t nil t)
+        (setq-default pdf-view-display-size 'fit-page)
+        (add-hook 'pdf-view-mode-hook
+                  (lambda ()
+                    (display-line-numbers-mode 0)
+                    (auto-revert-mode 1)))
+      ''
+    else
+      "";
+  initEl =
+    builtins.replaceStrings
+      [
+        "@copy-command@"
+        "@copy-args@"
+        "@open-command@"
+        "@mail-config@"
+        "@pdf-tools-config@"
+      ]
+      [
+        copyCommand
+        copyArgs
+        openCommand
+        mailConfig
+        pdfToolsConfig
+      ]
+      (builtins.readFile ./emacs/init.el);
 in
 {
-  options.myHome.development.emacs.enable = lib.mkEnableOption "Emacs configuration";
-
-  config = lib.mkIf cfg.enable {
-    programs.emacs = {
-      enable = true;
-      package = emacsPackages.emacsWithPackages (
-        epkgs: with epkgs; [
-          cape
-          consult
-          corfu
-          corfu-terminal
-          gruvbox-theme
-          ef-themes
-          modus-themes
-          magit
-          marginalia
-          markdown-mode
-          nix-mode
-          org-roam
-          orderless
-          pdf-tools
-          (treesit-grammars.with-grammars (
-            grammars: with grammars; [
-              tree-sitter-bash
-              tree-sitter-c
-              tree-sitter-c-sharp
-              tree-sitter-cmake
-              tree-sitter-cpp
-              tree-sitter-css
-              tree-sitter-dockerfile
-              tree-sitter-go
-              tree-sitter-gomod
-              tree-sitter-html
-              tree-sitter-java
-              tree-sitter-javascript
-              tree-sitter-json
-              tree-sitter-python
-              tree-sitter-ruby
-              tree-sitter-rust
-              tree-sitter-toml
-              tree-sitter-tsx
-              tree-sitter-typescript
-              tree-sitter-yaml
-            ]
-          ))
-          vertico
-          which-key
-          htmlize
-
-          avy
-          embark
-          embark-consult
-          envrc
-          rainbow-delimiters
-          package-lint
-          prescient
-          corfu-prescient
-          vertico-prescient
-          elsa
-          helpful
-          multiple-cursors
-
-          tempel
-          tempel-collection
-
-          tuareg
-          ocaml-eglot
-
-          yaml-mode
-
-          nerd-icons
-          nerd-icons-completion
-          nerd-icons-dired
-
-          kkp
-
-          mu4e
-          org-mime
-        ]
-      );
-    };
-
-    services.emacs = {
-      enable = true;
-      client.enable = true;
-      socketActivation.enable = true;
-      startWithUserSession = false;
-    };
-
-    systemd.user.services.emacs.Unit = {
-      After = [ "graphical-session.target" ];
-      PartOf = [ "graphical-session.target" ];
-    };
-
-    systemd.user.services.emacs.Service.Environment = [
-      "GTK_IM_MODULE="
-      "QT_IM_MODULE=fcitx"
-      "XMODIFIERS=@im=fcitx"
-      "INPUT_METHOD=fcitx"
-      "SDL_IM_MODULE=fcitx"
-    ];
-
-    home.packages = with pkgs; [
-      nixd
-      nixfmt
-      markdown-oxide
-      yaml-language-server
-      basedpyright
-      ripgrep
-      fd
-      sqlite
-      wl-clipboard
-      emacsPackages.elsa
-    ];
-
-    home.file.".emacs.d/init.el".text = builtins.replaceStrings [ "@wl-copy@" ] [ wlCopy ] (
-      builtins.readFile ./emacs/init.el
-    );
-
-    home.file.".emacs.d/early-init.el".source = ./emacs/early-init.el;
-
-    home.file.".emacs" = {
-      force = true;
-      text = ''
-        ;;; .emacs --- compatibility loader -*- lexical-binding: t; -*-
-
-        ;; Emacs loads ~/.emacs before ~/.emacs.d/init.el. Keep this file as a
-        ;; tiny Home Manager-managed shim so the real config is always loaded.
-        (load (expand-file-name "init.el" user-emacs-directory) nil t)
-
-        ;;; .emacs ends here
-      '';
-    };
-
-    home.sessionVariables = {
-      EDITOR = "emacsclient -t -a emacs";
-      VISUAL = "emacsclient -t -a emacs";
+  options.myHome.development.emacs = {
+    enable = lib.mkEnableOption "Emacs configuration";
+    enableMail = lib.mkEnableOption "mu4e mail integration";
+    enablePdfTools = lib.mkOption {
+      type = lib.types.bool;
+      default = pkgs.stdenv.isLinux;
+      description = "Enable pdf-tools package and Emacs setup.";
     };
   };
+
+  config = lib.mkIf cfg.enable (
+    lib.mkMerge [
+      {
+        programs.emacs = {
+          enable = true;
+          package = emacsPackages.emacsWithPackages (
+            epkgs:
+            with epkgs;
+            [
+              cape
+              consult
+              corfu
+              corfu-terminal
+              gruvbox-theme
+              ef-themes
+              modus-themes
+              magit
+              marginalia
+              markdown-mode
+              nix-mode
+              org-roam
+              orderless
+              (treesit-grammars.with-grammars (
+                grammars: with grammars; [
+                  tree-sitter-bash
+                  tree-sitter-c
+                  tree-sitter-c-sharp
+                  tree-sitter-cmake
+                  tree-sitter-cpp
+                  tree-sitter-css
+                  tree-sitter-dockerfile
+                  tree-sitter-go
+                  tree-sitter-gomod
+                  tree-sitter-html
+                  tree-sitter-java
+                  tree-sitter-javascript
+                  tree-sitter-json
+                  tree-sitter-python
+                  tree-sitter-ruby
+                  tree-sitter-rust
+                  tree-sitter-toml
+                  tree-sitter-tsx
+                  tree-sitter-typescript
+                  tree-sitter-yaml
+                ]
+              ))
+              vertico
+              which-key
+              htmlize
+
+              avy
+              embark
+              embark-consult
+              envrc
+              rainbow-delimiters
+              package-lint
+              prescient
+              corfu-prescient
+              vertico-prescient
+              elsa
+              helpful
+              multiple-cursors
+
+              tempel
+              tempel-collection
+
+              tuareg
+              ocaml-eglot
+
+              yaml-mode
+
+              nerd-icons
+              nerd-icons-completion
+              nerd-icons-dired
+
+              kkp
+            ]
+            ++ lib.optionals cfg.enablePdfTools (optionalEmacsPkg pdf-tools)
+            ++ lib.optionals cfg.enableMail (optionalEmacsPkg mu4e ++ optionalEmacsPkg org-mime)
+          );
+        };
+
+        home.packages =
+          lib.concatMap optionalPkg [
+            [ "nixd" ]
+            [ "nixfmt" ]
+            [ "markdown-oxide" ]
+            [ "yaml-language-server" ]
+            [ "basedpyright" ]
+            [ "ripgrep" ]
+            [ "fd" ]
+            [ "sqlite" ]
+          ]
+          ++ lib.optionals pkgs.stdenv.isLinux (optionalPkg [ "wl-clipboard" ])
+          ++ optionalEmacsPkg emacsPackages.elsa;
+
+        home.file.".emacs.d/init.el".text = initEl;
+
+        home.file.".emacs.d/early-init.el".source = ./emacs/early-init.el;
+
+        home.file.".emacs" = {
+          force = true;
+          text = ''
+            ;;; .emacs --- compatibility loader -*- lexical-binding: t; -*-
+
+            ;; Emacs loads ~/.emacs before ~/.emacs.d/init.el. Keep this file as a
+            ;; tiny Home Manager-managed shim so the real config is always loaded.
+            (load (expand-file-name "init.el" user-emacs-directory) nil t)
+
+            ;;; .emacs ends here
+          '';
+        };
+
+        home.sessionVariables = {
+          EDITOR = "emacsclient -t -a emacs";
+          VISUAL = "emacsclient -t -a emacs";
+        };
+      }
+
+      (lib.mkIf pkgs.stdenv.isLinux {
+        services.emacs = {
+          enable = true;
+          client.enable = true;
+          socketActivation.enable = true;
+          startWithUserSession = false;
+        };
+
+        systemd.user.services.emacs.Unit = {
+          After = [ "graphical-session.target" ];
+          PartOf = [ "graphical-session.target" ];
+        };
+
+        systemd.user.services.emacs.Service.Environment = [
+          "GTK_IM_MODULE="
+          "QT_IM_MODULE=fcitx"
+          "XMODIFIERS=@im=fcitx"
+          "INPUT_METHOD=fcitx"
+          "SDL_IM_MODULE=fcitx"
+        ];
+      })
+    ]
+  );
 }

@@ -2,60 +2,86 @@
 
 ## Project Structure & Module Organization
 
-This repository is a Nix flake for one NixOS workstation. The main entry points are:
+This repository worktree is a macOS nix-darwin flake for user `yurikon`.
+It also keeps standalone Home Manager outputs for user-layer evaluation.
 
-- `flake.nix`: flake inputs and `nixosConfigurations.nixos`.
-- `hosts/nixos/default.nix`: host-specific system entry.
-- `home.nix`: Home Manager entry for user `yurikon`.
-- `configuration.nix`: compatibility shim importing `hosts/nixos`.
-- `hardware-configuration.nix`: generated hardware/filesystem configuration.
+Main entry points:
 
-Reusable modules live under `modules/`:
+- `flake.nix`: flake inputs, `darwinConfigurations`, and `homeConfigurations`.
+- `hosts/macos/default.nix`: host-specific nix-darwin entry.
+- `hosts/macos/home.nix`: Home Manager entry for user `yurikon`.
+- `home.nix`: compatibility shim importing `hosts/macos/home.nix`.
+- `modules/darwin/profiles/macos.nix`: macOS nix-darwin profile.
+- `modules/home/profiles/macos.nix`: macOS Home Manager profile.
 
-- `modules/system/{core,desktop,services,profiles}` for NixOS options.
-- `modules/home/{core,cli,desktop,development,secrets,profiles}` for Home Manager options.
+Reusable nix-darwin modules live under `modules/darwin/`:
 
-There are no traditional source, asset, or test directories. Treat Nix modules as the project source.
+- `core/` for Nix daemon and macOS defaults.
+- `apps/` for Homebrew and system-level app management.
+- `profiles/` for module composition.
+
+Reusable Home Manager modules live under `modules/home/`:
+
+- `core/` for session, shell, and XDG defaults.
+- `cli/` for terminal and command-line workflows.
+- `development/` for Emacs and common development tools.
+- `desktop/fonts.nix` for user fonts and fontconfig.
+- `profiles/` for module composition.
+
+There are no traditional source, asset, or test directories. Treat Nix modules
+as the project source.
 
 ## Build, Test, and Development Commands
 
-- `nix flake check --no-build path:/home/yurikon/nixos-config`: evaluate the full flake without building.
-- `sudo nixos-rebuild switch --flake path:/home/yurikon/nixos-config#nixos`: apply system and Home Manager changes.
-- `nixfmt flake.nix home.nix configuration.nix hosts/**/*.nix modules/**/*.nix`: format Nix files.
+- `nix flake check --no-build path:/home/yurikon/nixos-config-macos`: evaluate the flake without building.
+- `sudo nix run nix-darwin/master#darwin-rebuild -- switch --flake path:$PWD#yurikon-macos`: first nix-darwin apply on Apple Silicon macOS.
+- `sudo darwin-rebuild switch --flake path:$PWD#yurikon-macos`: subsequent Apple Silicon applies.
+- `sudo darwin-rebuild switch --flake path:$PWD#yurikon-macos-x86_64`: Intel macOS apply.
+- `nixfmt flake.nix home.nix hosts/**/*.nix modules/**/*.nix`: format Nix files.
 
-Use the `path:` flake form while new files are untracked; plain Git-backed flakes can miss untracked modules.
+Use the `path:` flake form while new files are untracked; plain Git-backed
+flakes can miss untracked modules.
 
 ## Coding Style & Naming Conventions
 
-Use `nixfmt` formatting. Keep modules small and named by responsibility, for example `cli/git.nix`, `desktop/fonts.nix`, or `services/pipewire.nix`. Avoid vague names such as `misc.nix`.
+Use `nixfmt` formatting. Keep modules small and named by responsibility, for
+example `cli/git.nix`, `development/emacs.nix`, or `desktop/fonts.nix`. Avoid
+vague names such as `misc.nix`.
 
-System modules should expose `mySystem.*.enable`; Home Manager modules should expose `myHome.*.enable`. Profiles should compose and enable modules, not contain large implementation blocks.
+Darwin modules should expose `myDarwin.*.enable`. Home Manager modules should
+expose `myHome.*.enable`. Profiles should compose and enable modules, not
+contain large implementation blocks.
 
-Prefer structured options such as `programs.*`, `services.*`, `xdg.configFile`, and `home.file` over ad hoc activation scripts.
+Prefer structured nix-darwin and Home Manager options such as `homebrew.*`,
+`system.defaults.*`, `programs.*`, `services.*`, `xdg.configFile`, and
+`home.file` over ad hoc activation scripts.
 
 ## Testing Guidelines
 
 There is no separate test framework. The required check is Nix evaluation:
 
 ```sh
-nix flake check --no-build path:/home/yurikon/nixos-config
+nix flake check --no-build path:/home/yurikon/nixos-config-macos
 ```
 
-For risky system changes, prefer a build or dry activation before switching. Verify Niri/Noctalia, fonts, input method, and shell behavior after desktop-related changes.
+For risky package changes, prefer `home-manager build` or a dry evaluation
+before switching.
 
 ## Commit & Pull Request Guidelines
 
-Recent commits use short summary messages, sometimes in Chinese, for example `use fish` or `调整 ghostty 字体`. Keep commits concise and focused on one logical change.
+Keep commits concise and focused on one logical change.
 
 For pull requests or review notes, include:
 
 - What changed and why.
 - Whether `nix flake check --no-build ...` passed.
-- Any manual validation needed after switching.
-- Screenshots only for visible desktop/UI changes.
+- Any manual validation needed after switching on macOS.
 
 ## Security & Configuration Tips
 
-Never commit private keys, tokens, cookies, password stores, browser sessions, generated databases, caches, or logs. `modules/home/secrets` should only describe local hooks, not secret values.
+Never commit private keys, tokens, cookies, password stores, browser sessions,
+generated databases, caches, logs, or secret values. Browser state is explicitly
+out of scope for this macOS worktree.
 
-Use the migration backup as reference material only. Project-specific LSPs, compilers, SDKs, and formatters should usually live in each project’s flake or dev shell, not in global Home Manager.
+Project-specific LSPs, compilers, SDKs, and formatters should usually live in
+each project's flake or dev shell, not in global Home Manager.

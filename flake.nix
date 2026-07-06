@@ -1,53 +1,70 @@
 {
-  description = "My NixOS configuration";
+  description = "Yurikon macOS nix-darwin configuration";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nix-darwin = {
+      url = "github:nix-darwin/nix-darwin/master";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     home-manager = {
       url = "github:nix-community/home-manager/master";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    noctalia = {
-      url = "github:noctalia-dev/noctalia/main";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    sops-nix = {
-      url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
   outputs =
     inputs@{
-      self,
       nixpkgs,
+      nix-darwin,
       home-manager,
-      sops-nix,
       ...
     }:
-    {
-      nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        specialArgs = {
-          inherit inputs;
+    let
+      mkPkgs =
+        system:
+        import nixpkgs {
+          inherit system;
+          config.allowUnfree = true;
         };
-        modules = [
-          sops-nix.nixosModules.sops
-          ./hosts/nixos
-          home-manager.nixosModules.home-manager
-          {
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.backupFileExtension = "hm-backup";
-            home-manager.extraSpecialArgs = {
-              inherit inputs;
-            };
-            home-manager.sharedModules = [
-              sops-nix.homeManagerModules.sops
-            ];
-            home-manager.users.yurikon = import ./home.nix;
-          }
-        ];
+      mkHome =
+        system:
+        home-manager.lib.homeManagerConfiguration {
+          pkgs = mkPkgs system;
+          extraSpecialArgs = {
+            inherit inputs;
+          };
+          modules = [
+            ./hosts/macos/home.nix
+          ];
+        };
+      mkDarwin =
+        system:
+        nix-darwin.lib.darwinSystem {
+          inherit system;
+          specialArgs = {
+            inherit inputs;
+          };
+          modules = [
+            {
+              nixpkgs.hostPlatform = system;
+            }
+            ./hosts/macos
+            home-manager.darwinModules.home-manager
+          ];
+        };
+    in
+    {
+      darwinConfigurations = {
+        yurikon-macos = mkDarwin "aarch64-darwin";
+        yurikon-macos-aarch64 = mkDarwin "aarch64-darwin";
+        yurikon-macos-x86_64 = mkDarwin "x86_64-darwin";
+      };
+
+      homeConfigurations = {
+        yurikon-macos = mkHome "aarch64-darwin";
+        yurikon-macos-aarch64 = mkHome "aarch64-darwin";
+        yurikon-macos-x86_64 = mkHome "x86_64-darwin";
       };
     };
 }

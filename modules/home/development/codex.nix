@@ -1,11 +1,15 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.myHome.development.codex;
 in
 {
-  options.myHome.development.codex.enable =
-    lib.mkEnableOption "OpenAI Codex CLI";
+  options.myHome.development.codex.enable = lib.mkEnableOption "OpenAI Codex CLI";
 
   config = lib.mkIf cfg.enable {
     home.packages = with pkgs; [

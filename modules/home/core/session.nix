@@ -1,4 +1,9 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.myHome.core.session;
@@ -14,6 +19,9 @@ in
       "$HOME/.local/bin"
       "$HOME/.cargo/bin"
       "$HOME/.npm-global/bin"
+    ]
+    ++ lib.optionals pkgs.stdenv.isDarwin [
+      "/nix/var/nix/profiles/default/bin"
     ];
 
     home.sessionVariables = {

@@ -219,19 +219,23 @@
 (vertico-prescient-mode 1)
 (corfu-prescient-mode 1)
 
-(defun yurikon/wl-copy-region (beg end)
-  "Copy the active region to the Wayland clipboard with wl-copy."
+(defconst yurikon/system-clipboard-command "@copy-command@")
+(defconst yurikon/system-clipboard-args '(@copy-args@))
+
+(defun yurikon/copy-region-to-system-clipboard (beg end)
+  "Copy the active region to the system clipboard."
   (interactive "r")
   (unless (use-region-p)
     (user-error "No active region"))
   (let ((coding-system-for-write 'utf-8-unix))
-    (unless (zerop (call-process-region beg end "@wl-copy@" nil nil nil
-                                        "--type" "text/plain"))
-      (user-error "wl-copy failed")))
+    (unless (zerop (apply #'call-process-region
+                          beg end yurikon/system-clipboard-command nil nil nil
+                          yurikon/system-clipboard-args))
+      (user-error "Clipboard copy failed")))
   (deactivate-mark)
-  (message "Copied region to Wayland clipboard"))
+  (message "Copied region to system clipboard"))
 
-(global-set-key (kbd "C-c w") #'yurikon/wl-copy-region)
+(global-set-key (kbd "C-c w") #'yurikon/copy-region-to-system-clipboard)
 
 ;; In-buffer completion. Works well in terminal and GUI.
 (require 'corfu)
@@ -415,7 +419,7 @@
 
 ;; Org and org-roam.
 (require 'org)
-(setq org-directory "/home/yurikon/Learning/org-learning"
+(setq org-directory (expand-file-name "Learning/org-learning" (getenv "HOME"))
       org-default-notes-file (expand-file-name "notes.org" org-directory))
 (make-directory org-directory t)
 (defconst yurikon/org-quick-notes-directory
@@ -426,9 +430,9 @@
 (require 'ox-publish)
 
 (setq org-publish-project-alist
-      '(("org-learning"
-         :base-directory "/home/yurikon/Learning/org-learning"
-         :publishing-directory "/home/yurikon/Learning/org-learning/public-html"
+      `(("org-learning"
+         :base-directory ,org-directory
+         :publishing-directory ,(expand-file-name "public-html" org-directory)
          :recursive t
          :publishing-function org-html-publish-to-html
          :with-author nil
@@ -503,15 +507,7 @@ ensures clangd is resolved from the project's dev shell before Eglot starts."
 (add-hook 'gfm-mode-hook #'visual-line-mode)
 (add-hook 'org-mode-hook #'visual-line-mode)
 
-;; PDF reading inside Emacs.
-(require 'pdf-tools)
-(add-to-list 'pdf-tools-enabled-modes 'pdf-view-auto-slice-minor-mode)
-(pdf-tools-install t nil t)
-(setq-default pdf-view-display-size 'fit-page)
-(add-hook 'pdf-view-mode-hook
-          (lambda ()
-            (display-line-numbers-mode 0)
-            (auto-revert-mode 1)))
+@pdf-tools-config@
 
 ;; Fast Jump
 (require 'avy)
@@ -584,63 +580,11 @@ ensures clangd is resolved from the project's dev shell before Eglot starts."
                 buffer-file-name)))
     (unless file
       (user-error "Current buffer is not visiting a file"))
-    (start-process "xdg-open" nil "xdg-open" file)))
+    (start-process "@open-command@" nil "@open-command@" file)))
 
 (global-set-key (kbd "C-c o") #'yurikon/open-current-file-externally)
 
-;; use mu4e for mail frontend
-(require 'mu4e)
-(setq mail-user-agent 'mu4e-user-agent)
-(setq mu4e-maildir "~/Mail")
-(setq mu4e-get-mail-command "mbsync -a")
-(setq mu4e-update-interval 600)
-(setq mu4e-change-filenames-when-movin t)
-(setq mu4e-view-open-program "xdg-open")
-(setq mu4e-attachment-dir "~/Downloads")
-
-(require 'mailcap)
-(setq mailcap-user-mime-data
-      '(("application/pdf" (viewer . "xdg-open %s") (type . "application/pdf"))
-        ("application/octet-stream" (viewer . "xdg-open %s") (type . "application/octet-stream"))
-        ("application/zip" (viewer . "xdg-open %s") (type . "application/zip"))
-        ("application/vnd.*" (viewer . "xdg-open %s") (type . "application/vnd.*"))
-        ("image/.*" (viewer . "xdg-open %s") (type . "image/.*"))))
-(mailcap-parse-mailcaps)
-(dolist (mime-type '("application/pdf"
-                     "application/octet-stream"
-                     "application/zip"
-                     "application/vnd.*"))
-  (setq mm-inlined-types (delete mime-type mm-inlined-types)))
-
-(setq message-send-mail-function 'message-send-mail-with-sendmail)
-(setq sendmail-program "msmtp")
-(setq message-sendmail-extra-arguments '("--read-envelope-from"))
-(setq message-sendmail-f-is-evil t)
-(setq message-kill-buffer-on-exit t)
-
-(setq mu4e-contexts
-      (list
-      (make-mu4e-context
-       :name "gmail"
-       :match-func (lambda (msg)
-                     (when msg
-                       (string-prefix-p "/gmail" (mu4e-message-field msg :maildir))))
-       :vars '((user-mail-address . "h6606797@gmail.com")
-               (user-full-name . "Yurikon")))
-      (make-mu4e-context
-       :name "qq"
-       :match-func (lambda (msg)
-                     (when msg
-                       (string-prefix-p "/qq" (mu4e-message-field msg :maildir))))
-       :vars '((user-mail-address . "3166701497@qq.com")
-               (user-full-name . "郑彦文")))
-      (make-mu4e-context
-       :name "163"
-       :match-func (lambda (msg)
-                     (when msg
-                       (string-prefix-p "/netease163" (mu4e-message-field msg :maildir))))
-       :vars '((user-mail-address . "yuriisbest@163.com")
-               (user-full-name . "Yurikon")))))
+@mail-config@
 
 ;; Keep custom.el separate from the generated init file.
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))

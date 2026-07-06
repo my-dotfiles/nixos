@@ -12,7 +12,7 @@ let
     let
       value = lib.attrByPath path null pkgs;
     in
-    lib.optional (value != null) value;
+    lib.optional (value != null && lib.meta.availableOn pkgs.stdenv.hostPlatform value) value;
 in
 {
   options.myHome.desktop.fonts.enable = lib.mkEnableOption "user fonts and fontconfig";

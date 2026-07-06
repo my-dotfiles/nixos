@@ -34,13 +34,14 @@ in
         g = "git";
         e = "emacsclient -n -c -a emacs";
         et = "emacsclient -t -a emacs";
-        hmconfig = "$EDITOR ~/nixos-config/home.nix";
+        hmconfig = "$EDITOR ~/nixos-config-macos/home.nix";
       };
 
       interactiveShellInit = ''
         set fish_greeting
         fish_add_path $HOME/.nix-profile/bin
         fish_add_path $HOME/.local/state/nix/profile/bin
+        fish_add_path /nix/var/nix/profiles/default/bin
         fish_add_path $HOME/.local/bin
         fish_add_path $HOME/.cargo/bin
         fish_add_path $HOME/.npm-global/bin
