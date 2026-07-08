@@ -21,7 +21,23 @@
 (set-language-environment "UTF-8")
 (prefer-coding-system 'utf-8)
 
-(add-to-list 'default-frame-alist '(font . "Iosevka Nerd Font Mono-13"))
+(defconst yurikon/default-font-family "Iosevka Nerd Font Mono"
+  "Default Latin monospace font family.")
+
+(defconst yurikon/default-font-size 13
+  "Default GUI font size in points.")
+
+(defconst yurikon/cjk-font-family "Maple Mono NF CN"
+  "CJK fallback font family.")
+
+(defun yurikon/default-font-name ()
+  "Return the default GUI font name."
+  (format "%s-%d" yurikon/default-font-family yurikon/default-font-size))
+
+(setq face-font-rescale-alist
+      `((,yurikon/cjk-font-family . 1.0)))
+
+(add-to-list 'default-frame-alist `(font . ,(yurikon/default-font-name)))
 (add-to-list 'default-frame-alist '(tool-bar-lines . 0))
 (add-to-list 'default-frame-alist '(vertical-scroll-bars . nil))
 (add-to-list 'default-frame-alist '(horizontal-scroll-bars . nil))
@@ -31,10 +47,10 @@
   (let ((frame (or frame (selected-frame))))
     (when (display-graphic-p frame)
       (with-selected-frame frame
-        (set-frame-font "Iosevka Nerd Font Mono-13" nil t)
+        (set-frame-font (yurikon/default-font-name) nil t)
         (dolist (charset '(kana han cjk-misc bopomofo))
           (set-fontset-font t charset
-                            (font-spec :family "Maple Mono NF CN" :size 16)))))))
+                            (font-spec :family yurikon/cjk-font-family)))))))
 
 (defun yurikon/apply-gui-fonts-later (&optional frame)
   "Apply GUI fonts after FRAME finishes toolkit initialization."
@@ -56,7 +72,7 @@
 (defconst yurikon/light-theme 'modus-operandi
   "Theme used by `switch-theme' for daytime editing.")
 
-(defconst yurikon/dark-theme 'ef-bio
+(defconst yurikon/dark-theme 'modus-vivendi
   "Theme used by `switch-theme' for nighttime editing.")
 
 (defun yurikon/load-theme (theme)
@@ -141,6 +157,17 @@
 (when (fboundp 'scroll-bar-mode)
   (scroll-bar-mode -1))
 
+(setq scroll-conservatively 101
+      scroll-margin 3
+      scroll-step 1
+      fast-but-imprecise-scrolling t
+      mouse-wheel-scroll-amount '(1 ((shift) . hscroll))
+      mouse-wheel-progressive-speed nil
+      pixel-scroll-precision-use-momentum nil)
+
+(when (fboundp 'pixel-scroll-precision-mode)
+  (pixel-scroll-precision-mode 1))
+
 ;; Use relative line numbers
 (setq display-line-numbers-type 'relative)
 (when (boundp 'display-line-numbers-exempt-modes)
@@ -185,6 +212,8 @@
 (require 'marginalia)
 (require 'orderless)
 (require 'consult)
+(setq enable-recursive-minibuffers t)
+(minibuffer-depth-indicate-mode 1)
 (vertico-mode 1)
 (marginalia-mode 1)
 (setq completion-styles '(orderless basic)
