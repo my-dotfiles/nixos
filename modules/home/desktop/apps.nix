@@ -25,7 +25,8 @@ in
       ++ optionalPkg "qutebrowser"
       ++ optionalPkg "thunderbird"
       ++ optionalPkg "zotero"
-      ++ optionalPkg "prismlauncher";
+      ++ optionalPkg "prismlauncher"
+      ++ optionalPkg "faugus-launcher";
     
   };
 }
