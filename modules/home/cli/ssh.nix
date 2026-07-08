@@ -27,6 +27,12 @@ in
           RequestTTY = "yes";
           RemoteCommand = "TERM=xterm-256color exec $SHELL -l";
         };
+        macos-raw = {
+          hostname = "100.120.108.67";
+          user = "yurikon";
+          RequestTTY = "no";
+          RemoteCommand = "none";
+        };
       };
     };
   };
