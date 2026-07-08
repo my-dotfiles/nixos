@@ -49,7 +49,7 @@ in
         brightnessctl
         playerctl
         fuzzel
-        alacritty
+        ghostty
         swayidle
         swaylock
         mako

@@ -59,7 +59,7 @@ in
       brightnessctl
       playerctl
       fuzzel
-      alacritty
+      ghostty
       wev
     ];
   };

@@ -8,7 +8,7 @@
 let
   cfg = config.myHome.desktop.sway;
   mod = "Mod4";
-  terminal = "alacritty";
+  terminal = "ghostty";
   menu = "fuzzel";
   fileManager = "xdg-open ${config.home.homeDirectory}";
   primaryOutput = "DP-1";
@@ -206,8 +206,6 @@ in
       settings = {
         # workstyle 会根据窗口 app_id/class 动态重命名 workspace，Waybar 直接显示结果。
         # 使用短字符而不是大图标，避免状态栏变宽或依赖特定图标字体。
-        alacritty = "T";
-        Alacritty = "T";
         dolphin = "F";
         "org.kde.dolphin" = "F";
         firefox = "W";
