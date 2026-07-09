@@ -13,6 +13,55 @@ let
       value = lib.attrByPath path null pkgs;
     in
     lib.optional (value != null && lib.meta.availableOn pkgs.stdenv.hostPlatform value) value;
+  iosevkaNerdFont = lib.attrByPath [
+    "nerd-fonts"
+    "iosevka"
+  ] null pkgs;
+  symbolsOnlyNerdFont = lib.attrByPath [
+    "nerd-fonts"
+    "symbols-only"
+  ] null pkgs;
+  mapleMonoNfCn = lib.attrByPath [
+    "maple-mono"
+    "NF-CN"
+  ] null pkgs;
+  sarasaGothic = lib.attrByPath [ "sarasa-gothic" ] null pkgs;
+  darwinFontLinks =
+    lib.optionalAttrs
+      (iosevkaNerdFont != null && lib.meta.availableOn pkgs.stdenv.hostPlatform iosevkaNerdFont)
+      {
+        "Library/Fonts/Nix Fonts/Iosevka Nerd Font" = {
+          source = "${iosevkaNerdFont}/share/fonts/truetype/NerdFonts/Iosevka";
+          recursive = true;
+        };
+      }
+    //
+      lib.optionalAttrs
+        (mapleMonoNfCn != null && lib.meta.availableOn pkgs.stdenv.hostPlatform mapleMonoNfCn)
+        {
+          "Library/Fonts/Nix Fonts/Maple Mono NF CN" = {
+            source = "${mapleMonoNfCn}/share/fonts/truetype";
+            recursive = true;
+          };
+        }
+    //
+      lib.optionalAttrs
+        (sarasaGothic != null && lib.meta.availableOn pkgs.stdenv.hostPlatform sarasaGothic)
+        {
+          "Library/Fonts/Nix Fonts/Sarasa Gothic" = {
+            source = "${sarasaGothic}/share/fonts/truetype";
+            recursive = true;
+          };
+        }
+    //
+      lib.optionalAttrs
+        (symbolsOnlyNerdFont != null && lib.meta.availableOn pkgs.stdenv.hostPlatform symbolsOnlyNerdFont)
+        {
+          "Library/Fonts/Nix Fonts/Symbols Nerd Font" = {
+            source = "${symbolsOnlyNerdFont}/share/fonts/truetype/NerdFonts/Symbols";
+            recursive = true;
+          };
+        };
 in
 {
   options.myHome.desktop.fonts.enable = lib.mkEnableOption "user fonts and fontconfig";
@@ -60,6 +109,8 @@ in
         "nerd-fonts"
         "monaspace"
       ];
+
+    home.file = lib.mkIf pkgs.stdenv.isDarwin darwinFontLinks;
 
     xdg.configFile."fontconfig/fonts.conf" = {
       force = true;

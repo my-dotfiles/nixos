@@ -27,6 +27,8 @@ in
       ++ optionalPkg [ "shellcheck" ]
       ++ optionalPkg [ "statix" ]
       ++ optionalPkg [ "deadnix" ]
+      ++ optionalPkg [ "gcc" ]
+      ++ optionalPkg [ "clang-tools" ]
       ++ optionalPkg [ "jdt-language-server" ]
       ++ optionalPkg [ "markdown-oxide" ]
       ++ optionalPkg [ "pyright" ]

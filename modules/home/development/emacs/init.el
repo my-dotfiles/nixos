@@ -23,24 +23,44 @@
 (set-language-environment "UTF-8")
 (prefer-coding-system 'utf-8)
 
+(require 'seq)
 (require 'server)
-(unless (server-running-p)
+(unless (or noninteractive (daemonp) (server-running-p))
   (server-start))
 
-(add-to-list 'default-frame-alist '(font . "Iosevka Nerd Font Mono-13"))
+(defconst yurikon/latin-font-family "Iosevka Nerd Font Mono"
+  "Preferred Latin monospace font for GUI frames.")
+
+(defconst yurikon/latin-font-size 15
+  "Preferred Latin font size for GUI frames.")
+
+(defconst yurikon/cjk-font-rescale 0.92
+  "Relative scale for CJK fonts against the default Latin font.")
+
+(add-to-list 'default-frame-alist `(font . ,(format "%s-%d" yurikon/latin-font-family yurikon/latin-font-size)))
 (add-to-list 'default-frame-alist '(tool-bar-lines . 0))
 (add-to-list 'default-frame-alist '(vertical-scroll-bars . nil))
 (add-to-list 'default-frame-alist '(horizontal-scroll-bars . nil))
+
+(defvar yurikon/cjk-font-candidates
+  '("Maple Mono NF CN" "Sarasa Mono SC" "PingFang SC")
+  "Preferred CJK fonts for GUI frames, in order.")
+
+(defun yurikon/available-font-family (families)
+  "Return the first available font family from FAMILIES."
+  (seq-find (lambda (family) (member family (font-family-list))) families))
 
 (defun yurikon/apply-gui-fonts (&optional frame)
   "Apply GUI fonts to FRAME after it has been created."
   (let ((frame (or frame (selected-frame))))
     (when (display-graphic-p frame)
       (with-selected-frame frame
-        (set-frame-font "Iosevka Nerd Font Mono-13" nil t)
-        (dolist (charset '(kana han cjk-misc bopomofo))
-          (set-fontset-font t charset
-                            (font-spec :family "Maple Mono NF CN" :size 16)))))))
+        (set-frame-font (format "%s-%d" yurikon/latin-font-family yurikon/latin-font-size) nil t)
+        (when-let* ((cjk-font (yurikon/available-font-family yurikon/cjk-font-candidates)))
+          (setq face-font-rescale-alist `((,cjk-font . ,yurikon/cjk-font-rescale)))
+          (dolist (charset '(kana han cjk-misc bopomofo))
+            (set-fontset-font t charset
+                              (font-spec :family cjk-font))))))))
 
 (defun yurikon/apply-gui-fonts-later (&optional frame)
   "Apply GUI fonts after FRAME finishes toolkit initialization."
@@ -377,11 +397,33 @@
              '((python-mode python-ts-mode)
                "basedpyright-langserver" "--stdio"))
 (add-to-list 'eglot-server-programs
+             '((typescript-ts-mode tsx-ts-mode)
+               "typescript-language-server" "--stdio"))
+(add-to-list 'eglot-server-programs
              '((c-mode c-ts-mode c++-mode c++-ts-mode c-or-c++-mode c-or-c++-ts-mode)
                . ("clangd"
                   "--background-index"
                   "--clang-tidy"
                   "--query-driver=/nix/store/**/bin/clang,/nix/store/**/bin/clang++,/nix/store/**/bin/gcc,/nix/store/**/bin/g++")))
+
+(defun yurikon/eglot-server-executable ()
+  "Return the executable configured for the current buffer's Eglot server."
+  (let ((program (cdr (eglot--lookup-mode major-mode))))
+    (cond
+     ((and (listp program) (stringp (car program))) (car program))
+     ((functionp program) nil)
+     ((stringp program) program))))
+
+(defun yurikon/eglot-ensure-if-server-available ()
+  "Start Eglot only when the configured language server is available."
+  (let ((server (yurikon/eglot-server-executable)))
+    (cond
+     ((null server)
+      (eglot-ensure))
+     ((executable-find server)
+      (eglot-ensure))
+     (t
+      (message "Skipping Eglot for %s: %s is not in PATH" major-mode server)))))
 
 (with-eval-after-load 'eglot
   (keymap-set eglot-mode-map "C-c l a" #'eglot-code-actions)
@@ -468,16 +510,16 @@
 (add-hook 'prog-mode-hook #'display-fill-column-indicator-mode)
 (add-hook 'prog-mode-hook #'hs-minor-mode)
 
-;; Start language servers automatically
-(add-hook 'markdown-mode-hook #'eglot-ensure)
-(add-hook 'gfm-mode-hook #'eglot-ensure)
-(add-hook 'yaml-mode-hook #'eglot-ensure)
-(add-hook 'yaml-ts-mode-hook #'eglot-ensure)
-(add-hook 'nix-mode-hook #'eglot-ensure)
-(add-hook 'python-mode-hook #'eglot-ensure)
-(add-hook 'python-ts-mode-hook #'eglot-ensure)
-(add-hook 'typescript-ts-mode-hook #'eglot-ensure)
-(add-hook 'tsx-ts-mode-hook #'eglot-ensure)
+;; Start language servers automatically when their executables are available.
+(add-hook 'markdown-mode-hook #'yurikon/eglot-ensure-if-server-available)
+(add-hook 'gfm-mode-hook #'yurikon/eglot-ensure-if-server-available)
+(add-hook 'yaml-mode-hook #'yurikon/eglot-ensure-if-server-available)
+(add-hook 'yaml-ts-mode-hook #'yurikon/eglot-ensure-if-server-available)
+(add-hook 'nix-mode-hook #'yurikon/eglot-ensure-if-server-available)
+(add-hook 'python-mode-hook #'yurikon/eglot-ensure-if-server-available)
+(add-hook 'python-ts-mode-hook #'yurikon/eglot-ensure-if-server-available)
+(add-hook 'typescript-ts-mode-hook #'yurikon/eglot-ensure-if-server-available)
+(add-hook 'tsx-ts-mode-hook #'yurikon/eglot-ensure-if-server-available)
 
 (defun yurikon/eglot-ensure-after-envrc ()
   "Refresh direnv for the current buffer before starting Eglot.
@@ -488,7 +530,7 @@ ensures clangd is resolved from the project's dev shell before Eglot starts."
   (when (and (bound-and-true-p envrc-mode)
              (fboundp 'envrc--update))
     (envrc--update))
-  (eglot-ensure))
+  (yurikon/eglot-ensure-if-server-available))
 
 (dolist (hook '(c-mode-hook
                 c-ts-mode-hook
@@ -505,8 +547,14 @@ ensures clangd is resolved from the project's dev shell before Eglot starts."
 
 ;; OCaml: Tuareg provides the major mode. OCaml-eglot adds the
 ;; OCaml-specific LSP integration and starts Eglot afterwards.
-(add-hook 'tuareg-mode-hook #'ocaml-eglot-mode)
-(add-hook 'ocaml-eglot-mode-hook #'eglot-ensure)
+(defun yurikon/ocaml-eglot-setup ()
+  "Enable OCaml Eglot integration when ocamllsp is available."
+  (if (executable-find "ocamllsp")
+      (ocaml-eglot-mode 1)
+    (message "Skipping OCaml Eglot: ocamllsp is not in PATH")))
+
+(add-hook 'tuareg-mode-hook #'yurikon/ocaml-eglot-setup)
+(add-hook 'ocaml-eglot-mode-hook #'yurikon/eglot-ensure-if-server-available)
 
 ;; Soft wrapping for prose buffers.
 (add-hook 'markdown-mode-hook #'visual-line-mode)

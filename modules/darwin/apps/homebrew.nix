@@ -18,7 +18,7 @@ let
   ];
 
   emacsFormulae = [
-    "emacs-plus"
+    "emacs-plus@30"
   ];
 
   # Keep only fast-moving or ecosystem-managed CLI tools in Homebrew. General
@@ -41,13 +41,11 @@ let
     "font-jetbrains-mono-nerd-font"
     "font-maple-mono"
     "font-maple-mono-nf"
-    "font-maple-mono-nf-cn"
-    "font-sarasa-gothic"
   ];
 
   systemCasks = [
     "macfuse"
-    "tailscale"
+    "tailscale-app"
   ];
 in
 {
@@ -61,7 +59,7 @@ in
         "uninstall"
         "zap"
       ];
-      default = "uninstall";
+      default = "none";
       description = "How nix-darwin should handle Homebrew packages absent from the generated Brewfile.";
     };
 

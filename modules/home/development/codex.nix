@@ -12,10 +12,6 @@ in
   options.myHome.development.codex.enable = lib.mkEnableOption "OpenAI Codex CLI";
 
   config = lib.mkIf cfg.enable {
-    home.packages = with pkgs; [
-      nodejs
-    ];
-
     home.file.".local/bin/codex-proxy" = {
       executable = true;
       text = ''

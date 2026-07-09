@@ -22,6 +22,30 @@ let
     in
     lib.optional (value != null && lib.meta.availableOn pkgs.stdenv.hostPlatform value) value;
   optionalEmacsPkg = pkg: lib.optional (lib.meta.availableOn pkgs.stdenv.hostPlatform pkg) pkg;
+  treesitGrammarBundle = emacsPackages.treesit-grammars.with-grammars (
+    grammars: with grammars; [
+      tree-sitter-bash
+      tree-sitter-c
+      tree-sitter-c-sharp
+      tree-sitter-cmake
+      tree-sitter-cpp
+      tree-sitter-css
+      tree-sitter-dockerfile
+      tree-sitter-go
+      tree-sitter-gomod
+      tree-sitter-html
+      tree-sitter-java
+      tree-sitter-javascript
+      tree-sitter-json
+      tree-sitter-python
+      tree-sitter-ruby
+      tree-sitter-rust
+      tree-sitter-toml
+      tree-sitter-tsx
+      tree-sitter-typescript
+      tree-sitter-yaml
+    ]
+  );
   emacsPackageList =
     epkgs:
     with epkgs;
@@ -39,30 +63,7 @@ let
       nix-mode
       org-roam
       orderless
-      (treesit-grammars.with-grammars (
-        grammars: with grammars; [
-          tree-sitter-bash
-          tree-sitter-c
-          tree-sitter-c-sharp
-          tree-sitter-cmake
-          tree-sitter-cpp
-          tree-sitter-css
-          tree-sitter-dockerfile
-          tree-sitter-go
-          tree-sitter-gomod
-          tree-sitter-html
-          tree-sitter-java
-          tree-sitter-javascript
-          tree-sitter-json
-          tree-sitter-python
-          tree-sitter-ruby
-          tree-sitter-rust
-          tree-sitter-toml
-          tree-sitter-tsx
-          tree-sitter-typescript
-          tree-sitter-yaml
-        ]
-      ))
+      treesitGrammarBundle
       vertico
       which-key
       htmlize
@@ -105,6 +106,21 @@ let
   emacsWithPackages = emacsPackages.emacsWithPackages emacsPackageList;
   homebrewPrefix = if pkgs.stdenv.hostPlatform.isAarch64 then "/opt/homebrew" else "/usr/local";
   emacsPlusPrefix = "${homebrewPrefix}/opt/emacs-plus@30";
+  emacsProgram =
+    if pkgs.stdenv.isDarwin then "${emacsPlusPrefix}/bin/emacs" else lib.getExe emacsWithPackages;
+  emacsclientProgram =
+    if pkgs.stdenv.isDarwin then
+      "${emacsPlusPrefix}/bin/emacsclient"
+    else
+      lib.getExe' emacsWithPackages "emacsclient";
+  homebrewGccBin = "${homebrewPrefix}/opt/gcc/bin";
+  homebrewGccLib = "${homebrewPrefix}/opt/gcc/lib/gcc/current";
+  homebrewLibgccjitInclude = "${homebrewPrefix}/opt/libgccjit/include";
+  homebrewLibgccjitLib = "${homebrewPrefix}/opt/libgccjit/lib/gcc/current";
+  nativeCompLibraryPath = lib.concatStringsSep ":" [
+    homebrewLibgccjitLib
+    homebrewGccLib
+  ];
   copyCommand = if pkgs.stdenv.isDarwin then "pbcopy" else lib.getExe' pkgs.wl-clipboard "wl-copy";
   copyArgs = if pkgs.stdenv.isDarwin then "" else "\"--type\" \"text/plain\"";
   openCommand = if pkgs.stdenv.isDarwin then "open" else "xdg-open";
@@ -183,13 +199,15 @@ let
     else
       "";
   packageBootstrap = ''
-    ;; Editor packages are built by Nix. Homebrew emacs-plus supplies only the
-    ;; macOS application and command-line binaries.
+    ;; Editor packages are built by Nix. On macOS, Homebrew emacs-plus supplies
+    ;; the application and command-line binaries.
     (require 'package)
     (setq package-enable-at-startup nil
           package-archives nil
           package-directory-list
-          '("${emacsPackageEnv}/share/emacs/site-lisp/elpa"))
+          '("${emacsPackageEnv}/share/emacs/site-lisp/elpa")
+          treesit-extra-load-path
+          '("${treesitGrammarBundle}/lib"))
     (package-initialize)
   '';
   initEl =
@@ -236,7 +254,11 @@ in
           text = ''
             #!/usr/bin/env bash
 
-            exec ${emacsPlusPrefix}/bin/emacs --init-directory "$HOME/.emacs.d" "$@"
+            export PATH="${homebrewGccBin}:$PATH"
+            export CPATH="${homebrewLibgccjitInclude}''${CPATH:+:$CPATH}"
+            export LIBRARY_PATH="${nativeCompLibraryPath}''${LIBRARY_PATH:+:$LIBRARY_PATH}"
+
+            exec ${emacsProgram} --init-directory "$HOME/.emacs.d" "$@"
           '';
         };
 
@@ -245,7 +267,7 @@ in
           text = ''
             #!/usr/bin/env bash
 
-            exec ${emacsPlusPrefix}/bin/emacsclient "$@"
+            exec ${emacsclientProgram} "$@"
           '';
         };
 
@@ -253,9 +275,11 @@ in
           lib.concatMap optionalPkg [
             [ "nixd" ]
             [ "nixfmt" ]
+            [ "clang-tools" ]
             [ "markdown-oxide" ]
             [ "yaml-language-server" ]
             [ "basedpyright" ]
+            [ "typescript-language-server" ]
             [ "ripgrep" ]
             [ "fd" ]
             [ "sqlite" ]
@@ -306,6 +330,44 @@ in
           "INPUT_METHOD=fcitx"
           "SDL_IM_MODULE=fcitx"
         ];
+      })
+
+      (lib.mkIf pkgs.stdenv.isDarwin {
+        launchd.agents.emacs = {
+          enable = true;
+          config = {
+            ProgramArguments = [
+              "${config.home.homeDirectory}/.local/bin/emacs"
+              "--fg-daemon"
+            ];
+            RunAtLoad = true;
+            KeepAlive = true;
+            WorkingDirectory = config.home.homeDirectory;
+            StandardOutPath = "${config.home.homeDirectory}/Library/Logs/emacs-daemon.log";
+            StandardErrorPath = "${config.home.homeDirectory}/Library/Logs/emacs-daemon.log";
+            EnvironmentVariables = {
+              HOME = config.home.homeDirectory;
+              LANG = "en_US.UTF-8";
+              LC_CTYPE = "en_US.UTF-8";
+              CPATH = homebrewLibgccjitInclude;
+              LIBRARY_PATH = nativeCompLibraryPath;
+              PATH = lib.concatStringsSep ":" [
+                "/etc/profiles/per-user/${config.home.username}/bin"
+                "${config.home.homeDirectory}/.nix-profile/bin"
+                "${config.home.homeDirectory}/.local/state/nix/profile/bin"
+                "${config.home.homeDirectory}/.local/bin"
+                homebrewGccBin
+                "${homebrewPrefix}/bin"
+                "/nix/var/nix/profiles/default/bin"
+                "/usr/local/bin"
+                "/usr/bin"
+                "/bin"
+                "/usr/sbin"
+                "/sbin"
+              ];
+            };
+          };
+        };
       })
     ]
   );

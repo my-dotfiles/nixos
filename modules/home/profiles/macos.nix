@@ -19,6 +19,7 @@
     ../cli/yazi.nix
     ../development/editor.nix
     ../development/emacs.nix
+    ../development/node.nix
     ../development/tools.nix
     ../development/codex.nix
     ../desktop/fonts.nix
@@ -53,6 +54,7 @@
     enable = true;
     enableMail = false;
   };
+  myHome.development.node.enable = true;
   myHome.development.tools.enable = true;
   myHome.development.codex.enable = true;
 

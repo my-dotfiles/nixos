@@ -91,22 +91,27 @@ fish --version
 ```
 
 Emacs 在 macOS 上使用 Homebrew formula `d12frosted/emacs-plus/emacs-plus@30` 提供
-更贴近 macOS 的 GUI binary；Home Manager 继续管理 `~/.emacs`、
-`~/.emacs.d/init.el`、`early-init.el` 和 `~/.local/bin/emacs*` wrapper。elisp 包不再
-由 Brew Emacs 启动时联网安装，而是由 Nix 用 `pkgs.emacs30` 生成 ELPA package closure，
-再在 `init.el` 中加入 `package-directory-list`。
+更贴近 macOS、Apple Silicon 友好的 GUI binary；Home Manager 继续管理
+`~/.emacs`、`~/.emacs.d/init.el`、`early-init.el`、`~/.local/bin/emacs*` wrapper 和
+用户级 `launchd` daemon。elisp 包不由 Brew Emacs 启动时联网安装，而是由 Nix 用
+`pkgs.emacs30` 生成 ELPA package closure，再在 `init.el` 中加入 `package-directory-list`。
+登录后 `launchd` 会以 `emacs --fg-daemon` 启动后台服务，`emacsclient -c` 或
+`emacsclient -t` 会连接到这个 daemon。
 
 Homebrew 清单已经从首次迁移用的全量快照收窄为 macOS 应用层和少量快速更新工具。
 Homebrew 模块提供几个迁移阶段开关：
 
 - `myDarwin.apps.homebrew.includeFormulae`：保留少量 Brew formula，例如 `uv` 和 `yarn`。
-- `myDarwin.apps.homebrew.includeLegacyEmacsTaps`：默认关闭；只有需要 Brew Emacs 时再打开。
-- `myDarwin.apps.homebrew.cleanupMode`：默认 `"none"`；清单稳定后可先改为 `"check"`，
-  再考虑 `"uninstall"`，不要直接跳到 `"zap"`。
+- `myDarwin.apps.homebrew.includeLegacyEmacsTaps`：默认关闭；只保留历史比较用的
+  `railwaycat/emacsmacport` tap，不影响当前 `emacs-plus@30`。
+- `myDarwin.apps.homebrew.cleanupMode`：默认 `"none"`；由于 `emacs-plus@30` 依赖一批
+  Brew formula，不要在常规 activation 中自动 cleanup，避免误清依赖链。
 
-从 Brew 迁出的通用 CLI、构建工具、LSP 和 formatter 由 Home Manager 管理。由于当前
-`cleanupMode = "none"`，旧 Brew formula 不会在 activation 时被卸载；确认 Nix 版本工作
-正常后，再手动卸载或把 cleanup 切到 `"check"` 做差异检查。
+从 Brew 迁出的通用 CLI、构建工具、LSP 和 formatter 由 Home Manager 管理。
+
+npm 由 Home Manager 管理用户层安装行为：`~/.npmrc` 固定 `prefix` 到
+`~/.npm-global`，cache 到 `~/.cache/npm`，并关闭 `fund`、`audit` 和 update notifier。
+因此 `npm install -g ...` 不需要 sudo，也不会写入 Nix store 或 Homebrew prefix。
 
 当前 nix-darwin 已开始接管 Finder、Dock、截图、触控板、登录窗口和菜单栏时钟等 macOS
 defaults。更高风险的系统服务、网络、防火墙、隐私授权和浏览器状态暂不纳入。
