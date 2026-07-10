@@ -25,6 +25,7 @@
     ../development/codex.nix
     ../development/pi.nix
     ../desktop/apps.nix
+    ../desktop/cursor.nix
     ../desktop/fonts.nix
     ../desktop/fcitx5.nix
     ../desktop/lockscreen.nix

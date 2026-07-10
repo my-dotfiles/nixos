@@ -18,6 +18,13 @@
       fill-column 100
       read-process-output-max (* 1024 1024))
 
+;; 默认 GC 阈值较小，补全和语言服务器分配候选项时容易产生可感知的停顿。
+;; 同时保留字体缓存，避免多语言缓冲区因重建字体缓存而阻塞重绘。
+(setq gc-cons-threshold (* 32 1024 1024)
+      gc-cons-percentage 0.1
+      inhibit-compacting-font-caches t
+      process-adaptive-read-buffering nil)
+
 (set-language-environment "UTF-8")
 (prefer-coding-system 'utf-8)
 
@@ -168,8 +175,9 @@
 (when (fboundp 'pixel-scroll-precision-mode)
   (pixel-scroll-precision-mode 1))
 
-;; Use relative line numbers
-(setq display-line-numbers-type 'relative)
+;; 相对行号会在光标纵向移动后更新所有可见行号；绝对行号能减少窗口重绘。
+(setq display-line-numbers-type t
+      display-line-numbers-width-start t)
 (when (boundp 'display-line-numbers-exempt-modes)
   (add-to-list 'display-line-numbers-exempt-modes 'pdf-view-mode))
 
@@ -327,9 +335,10 @@
   (keymap-set org-mode-map "TAB" #'yurikon/org-cycle-or-tempel-expand)
   (keymap-set org-mode-map "<tab>" #'yurikon/org-cycle-or-tempel-expand))
 
-;; Prefer official tree-sitter major modes when Emacs provides them.
+;; 优先使用 Emacs 提供的官方 tree-sitter major mode。Level 4 会增加开销，
+;; 但额外的高亮细节在日常编辑中并不明显。
 (require 'treesit)
-(setq treesit-font-lock-level 4)
+(setq treesit-font-lock-level 3)
 
 (defun yurikon/add-major-mode-remap (from to)
   "Remap FROM major mode to TO when TO is available."
@@ -371,13 +380,15 @@
   (yurikon/add-auto-mode (car entry) (cdr entry)))
 
 ;; Extra completion-at-point sources.
+(setq cape-dabbrev-buffer-function #'current-buffer)
 (add-to-list 'completion-at-point-functions #'cape-file)
 (add-to-list 'completion-at-point-functions #'cape-dabbrev)
 
 ;; corfu-popupinfo
 (require 'corfu-popupinfo)
 (corfu-popupinfo-mode 1)
-(setq corfu-popupinfo-delay '(0.5 . 0.2))
+;; 保留通过 M-t 查看文档的能力，但候选项变化时不再自动创建额外的 child frame。
+(setq corfu-popupinfo-delay nil)
 
 ;; Built-in project and LSP support.
 (require 'xref)
@@ -415,6 +426,7 @@
 (require 'ocaml-eglot)
 
 ;; Syntax checks.
+(setq flymake-no-changes-timeout 1.0)
 (add-hook 'prog-mode-hook #'flymake-mode)
 
 ;; Elisp editing support.
@@ -534,6 +546,7 @@ ensures clangd is resolved from the project's dev shell before Eglot starts."
 
 ;; PDF reading inside Emacs.
 (require 'pdf-tools)
+(require 'pdf-occur)
 (add-to-list 'pdf-tools-enabled-modes 'pdf-view-auto-slice-minor-mode)
 (pdf-tools-install t nil t)
 (setq-default pdf-view-display-size 'fit-page)

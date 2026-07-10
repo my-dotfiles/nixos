@@ -33,6 +33,7 @@
   myHome.development.pi.enable = true;
 
   myHome.desktop.apps.enable = true;
+  myHome.desktop.cursor.enable = true;
   myHome.desktop.fonts.enable = true;
   myHome.desktop.fcitx5.enable = true;
   myHome.desktop.lockscreen.enable = true;
