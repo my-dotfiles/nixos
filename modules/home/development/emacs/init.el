@@ -23,7 +23,19 @@
 (setq gc-cons-threshold (* 32 1024 1024)
       gc-cons-percentage 0.1
       inhibit-compacting-font-caches t
-      process-adaptive-read-buffering nil)
+      process-adaptive-read-buffering nil
+      ;; 避免 PGTK 在每次 GUI 状态变化后最多等待 100 毫秒。
+      pgtk-wait-for-event-timeout 0.01)
+
+;; 输入尚未结束时优先响应按键，把字体锁定和非关键重绘推迟到短暂空闲期。
+;; 禁用括号配对算法只影响少见的双向文本括号排版，不影响中文和常规代码。
+(setq redisplay-skip-fontification-on-input t
+      jit-lock-defer-time 0.05
+      jit-lock-stealth-time 1.0
+      jit-lock-stealth-nice 0.1
+      idle-update-delay 0.2
+      auto-window-vscroll nil
+      bidi-inhibit-bpa t)
 
 (set-language-environment "UTF-8")
 (prefer-coding-system 'utf-8)
@@ -66,11 +78,6 @@
 (yurikon/apply-gui-fonts)
 (add-hook 'after-make-frame-functions #'yurikon/apply-gui-fonts-later)
 (add-hook 'server-after-make-frame-hook #'yurikon/apply-gui-fonts-later)
-
-(require 'kkp)
-(add-hook 'tty-setup-hook #'global-kkp-mode)
-(unless (display-graphic-p)
-  (global-kkp-mode 1))
 
 (dolist (theme-library '("gruvbox-dark-hard-theme" "ef-themes" "modus-themes"))
   (add-to-list 'custom-theme-load-path
@@ -164,13 +171,18 @@
 (when (fboundp 'scroll-bar-mode)
   (scroll-bar-mode -1))
 
+(require 'pixel-scroll)
 (setq scroll-conservatively 101
       scroll-margin 3
       scroll-step 1
+      scroll-preserve-screen-position 1
       fast-but-imprecise-scrolling t
       mouse-wheel-scroll-amount '(1 ((shift) . hscroll))
       mouse-wheel-progressive-speed nil
-      pixel-scroll-precision-use-momentum nil)
+      pixel-scroll-precision-use-momentum t
+      pixel-scroll-precision-interpolate-page t
+      pixel-scroll-precision-momentum-min-velocity 20.0
+      pixel-scroll-precision-momentum-seconds 0.6)
 
 (when (fboundp 'pixel-scroll-precision-mode)
   (pixel-scroll-precision-mode 1))
