@@ -7,7 +7,8 @@
 
 let
   cfg = config.myHome.development.emacs;
-  emacsPackages = pkgs.emacsPackagesFor pkgs.emacs-pgtk;
+  emacsPackages = pkgs.emacsPackagesFor pkgs.emacs31-pgtk;
+  treeSitterDoxygen = pkgs.vimPlugins.nvim-treesitter.builtGrammars.doxygen;
   wlCopy = lib.getExe' pkgs.wl-clipboard "wl-copy";
 in
 {
@@ -21,7 +22,6 @@ in
           cape
           consult
           corfu
-          corfu-terminal
           gruvbox-theme
           ef-themes
           modus-themes
@@ -41,6 +41,7 @@ in
               tree-sitter-cpp
               tree-sitter-css
               tree-sitter-dockerfile
+              treeSitterDoxygen
               tree-sitter-go
               tree-sitter-gomod
               tree-sitter-html
@@ -60,6 +61,7 @@ in
           which-key
           htmlize
 
+          ace-window
           avy
           embark
           embark-consult
@@ -69,7 +71,6 @@ in
           prescient
           corfu-prescient
           vertico-prescient
-          elsa
           helpful
           multiple-cursors
 
@@ -84,7 +85,7 @@ in
           nerd-icons
           nerd-icons-completion
           nerd-icons-dired
-          
+
           mu4e
           org-mime
         ]
@@ -121,7 +122,6 @@ in
       fd
       sqlite
       wl-clipboard
-      emacsPackages.elsa
     ];
 
     home.file.".emacs.d/init.el".text = builtins.replaceStrings [ "@wl-copy@" ] [ wlCopy ] (

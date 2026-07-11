@@ -248,6 +248,10 @@
 (global-set-key (kbd "C-c f") #'project-find-file)
 (global-set-key (kbd "C-c s") #'consult-ripgrep)
 
+;; Select a visible window by its displayed key.
+(require 'ace-window)
+(global-set-key (kbd "M-o") #'ace-window)
+
 ;; Use grep-mode with ripgrep output, keeping Emacs' built-in next-error workflow.
 (setq grep-command "rg --vimgrep --smart-case --hidden --glob '!.git' "
       grep-use-null-device nil)
@@ -306,11 +310,6 @@
 
 (add-hook 'gud-mode-hook #'yurikon/gud-corfu-setup)
 
-;; use corfu completion in terminal
-(unless (display-graphic-p)
-  (require 'corfu-terminal)
-  (corfu-terminal-mode 1))
-
 (setq tab-always-indent 'complete)
 
 (require 'tempel)
@@ -350,7 +349,8 @@
 ;; 优先使用 Emacs 提供的官方 tree-sitter major mode。Level 4 会增加开销，
 ;; 但额外的高亮细节在日常编辑中并不明显。
 (require 'treesit)
-(setq treesit-font-lock-level 3)
+(setq treesit-font-lock-level 3
+      c-ts-mode-enable-doxygen t)
 
 (defun yurikon/add-major-mode-remap (from to)
   "Remap FROM major mode to TO when TO is available."
@@ -445,19 +445,11 @@
 (require 'package-lint)
 (require 'helpful)
 
-(defun yurikon/emacs-lisp-run-elsa ()
-  "Run Elsa on the current Emacs Lisp file."
-  (interactive)
-  (unless buffer-file-name
-    (user-error "This buffer is not visiting a file"))
-  (compile (format "elsa %s" (shell-quote-argument buffer-file-name))))
-
 (defun yurikon/emacs-lisp-setup ()
   "Configure local tooling for Emacs Lisp buffers."
   (setq-local indent-tabs-mode nil)
   (setq-local tab-width 2)
-  (flymake-mode 1)
-  (keymap-local-set "C-c e e" #'yurikon/emacs-lisp-run-elsa))
+  (flymake-mode 1))
 
 (add-hook 'emacs-lisp-mode-hook #'yurikon/emacs-lisp-setup)
 
@@ -627,7 +619,12 @@ ensures clangd is resolved from the project's dev shell before Eglot starts."
 (global-hl-line-mode 1)
 
 (add-to-list 'auto-mode-alist '("\\.nix\\'" . nix-mode))
-(add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
+(dolist (regexp '("\\.md\\'"
+                  "\\.markdown\\'"
+                  "\\.mdown\\'"
+                  "\\.mkd\\'"
+                  "\\.mkdn\\'"))
+  (add-to-list 'auto-mode-alist (cons regexp 'markdown-mode)))
 (add-to-list 'auto-mode-alist '("\\.ya?ml\\'" . yaml-mode))
 
 (defun yurikon/open-current-file-externally ()

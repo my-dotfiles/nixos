@@ -39,6 +39,7 @@
   myHome.desktop.lockscreen.enable = true;
   myHome.desktop.mime.enable = true;
   myHome.desktop.mpv.enable = true;
+  myHome.desktop.plasma.enable = true;
   myHome.desktop.sway.enable = false;
 
   myHome.services.rclone.enable = true;

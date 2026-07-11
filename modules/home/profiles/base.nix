@@ -32,6 +32,7 @@
     ../desktop/mime.nix
     ../desktop/mpv.nix
     ../desktop/niri.nix
+    ../desktop/plasma.nix
     ../desktop/sway.nix
     ../services/rclone.nix
     ../secrets/sops.nix
