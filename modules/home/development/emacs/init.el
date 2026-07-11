@@ -1,7 +1,7 @@
-;;; init.el --- Small GUI-first Emacs configuration -*- lexical-binding: t; -*-
+;;; init.el --- 以图形界面为主的精简 Emacs 配置 -*- lexical-binding: t; -*-
 
-;; This config keeps the normal Emacs editing model. Packages are provided
-;; by Nix, so Emacs does not refresh archives or install packages at startup.
+;; 本配置保留 Emacs 的常规编辑方式。软件包由 Nix 提供，因此 Emacs
+;; 启动时不会刷新软件包归档或自行安装软件包。
 ;;; Code
 (setq package-quickstart nil)
 
@@ -13,10 +13,14 @@
       create-lockfiles nil
       column-number-mode t
       sentence-end-double-space nil
-      indent-tabs-mode nil
-      tab-width 2
-      fill-column 100
       read-process-output-max (* 1024 1024))
+
+;; 这些变量进入主模式后会变成缓冲区局部变量，因此应设置默认值，
+;; 而不是只修改启动缓冲区中的值。
+(setq-default indent-tabs-mode nil
+              tab-width 2
+              fill-column 100
+              truncate-lines t)
 
 ;; 默认 GC 阈值较小，补全和语言服务器分配候选项时容易产生可感知的停顿。
 ;; 同时保留字体缓存，避免多语言缓冲区因重建字体缓存而阻塞重绘。
@@ -204,6 +208,10 @@
 
 (show-paren-mode 1)
 (electric-pair-mode 1)
+;; 按 RET 时重新缩进刚结束的当前行，并按照主模式规则缩进新行。
+;; C-j 仍然只插入换行，可用于需要保留原始缩进的场景。
+(setq electric-pair-open-newline-between-pairs t)
+(electric-indent-mode 1)
 (save-place-mode 1)
 (savehist-mode 1)
 (recentf-mode 1)
@@ -216,18 +224,11 @@
 (require 'which-key)
 (which-key-mode 1)
 
-(setq-default truncate-lines t)
-
-;; Emacs runs as a daemon, so project-local tooling from direnv must be
-;; loaded per buffer instead of inherited from the original service process.
-(require 'envrc)
-(envrc-global-mode 1)
-
-;; set cursor
+;; 设置光标。
 (setq-default cursor-type 'box)
 (blink-cursor-mode 0)
 
-;; Minibuffer completion.
+;; minibuffer 补全。
 (require 'vertico)
 (require 'marginalia)
 (require 'orderless)
@@ -248,29 +249,16 @@
 (global-set-key (kbd "C-c f") #'project-find-file)
 (global-set-key (kbd "C-c s") #'consult-ripgrep)
 
-;; Select a visible window by its displayed key.
+;; 根据窗口上显示的按键快速选择可见窗口。
 (require 'ace-window)
 (global-set-key (kbd "M-o") #'ace-window)
 
-;; Use grep-mode with ripgrep output, keeping Emacs' built-in next-error workflow.
+;; 让 grep-mode 使用 ripgrep 输出，同时保留 Emacs 内置的 next-error 工作流。
 (setq grep-command "rg --vimgrep --smart-case --hidden --glob '!.git' "
       grep-use-null-device nil)
 
 (require 'magit)
 (global-set-key (kbd "C-c g") #'magit-status)
-
-(require 'prescient)
-(require 'vertico-prescient)
-(require 'corfu-prescient)
-
-(setq prescient-persist-mode t)
-(prescient-persist-mode 1)
-
-;; Only use prescient to order, use orderless to filter
-(setq vertico-prescient-enable-filtering nil
-      corfu-prescient-enable-filtering nil)
-(vertico-prescient-mode 1)
-(corfu-prescient-mode 1)
 
 (defun yurikon/wl-copy-region (beg end)
   "Copy the active region to the Wayland clipboard with wl-copy."
@@ -286,9 +274,8 @@
 
 (global-set-key (kbd "C-c w") #'yurikon/wl-copy-region)
 
-;; In-buffer completion. Works well in terminal and GUI.
+;; 缓冲区内补全，同时适用于终端和图形界面。
 (require 'corfu)
-(require 'cape)
 (setq global-corfu-modes '((not comint-mode gud-mode) t)
       global-corfu-minibuffer nil)
 (global-corfu-mode 1)
@@ -297,9 +284,16 @@
       corfu-auto-prefix 2
       corfu-cycle t
       corfu-preselect 'prompt)
-(keymap-set corfu-map "TAB" #'corfu-next)
-(keymap-set corfu-map "<backtab>" #'corfu-previous)
-(keymap-set corfu-map "RET" #'corfu-insert)
+
+(defun yurikon/corfu-defaults ()
+  "为自动补全使用稳定且开销较低的前缀匹配。"
+  (setq-local completion-styles '(basic)
+              completion-category-defaults nil
+              completion-category-overrides nil))
+
+(add-hook 'corfu-mode-hook #'yurikon/corfu-defaults)
+;; 自动弹窗出现时，TAB 接受补全，RET 始终交还主模式用于换行。
+(keymap-unset corfu-map "RET")
 
 (defun yurikon/gud-corfu-setup ()
   "Show GUD completions with Corfu only when completion is requested."
@@ -310,73 +304,62 @@
 
 (add-hook 'gud-mode-hook #'yurikon/gud-corfu-setup)
 
-(setq tab-always-indent 'complete)
+;; 保持 TAB 行为确定：Corfu 弹窗之外只执行缩进。仍可通过 M-TAB 显式补全，
+;; Corfu 也会自动弹出。
+(setq tab-always-indent t
+      electric-indent-actions nil)
 
 (require 'tempel)
 (require 'tempel-collection)
 
-(defun yurikon/tempel-setup-capf ()
-  "Let exact Tempel templates participate in completion-at-point."
-  (add-hook 'completion-at-point-functions #'tempel-expand nil t))
-
-(defun yurikon/tempel-expand-maybe ()
-  "Expand an exact Tempel template at point, returning non-nil on success."
-  (condition-case nil
-      (progn
-        (tempel-expand t)
-        t)
-    (user-error nil)))
-
-(add-hook 'prog-mode-hook #'yurikon/tempel-setup-capf)
-(add-hook 'text-mode-hook #'yurikon/tempel-setup-capf)
-(add-hook 'conf-mode-hook #'yurikon/tempel-setup-capf)
-
 (global-set-key (kbd "C-c y c") #'tempel-complete)
 (global-set-key (kbd "C-c y i") #'tempel-insert)
 
-(with-eval-after-load 'org
-  (require 'org-tempo)
-
-  (defun yurikon/org-cycle-or-tempel-expand ()
-    "Expand an exact Tempel template, otherwise fall back to `org-cycle'."
-    (interactive)
-    (unless (yurikon/tempel-expand-maybe)
-      (call-interactively #'org-cycle)))
-
-  (keymap-set org-mode-map "TAB" #'yurikon/org-cycle-or-tempel-expand)
-  (keymap-set org-mode-map "<tab>" #'yurikon/org-cycle-or-tempel-expand))
-
-;; 优先使用 Emacs 提供的官方 tree-sitter major mode。Level 4 会增加开销，
+;; 优先使用 Emacs 提供的官方 tree-sitter 主模式。第 4 级会增加开销，
 ;; 但额外的高亮细节在日常编辑中并不明显。
 (require 'treesit)
 (setq treesit-font-lock-level 3
-      c-ts-mode-enable-doxygen t)
+      c-ts-mode-enable-doxygen t
+      c-ts-indent-offset 2
+      c-basic-offset 2)
 
-(defun yurikon/add-major-mode-remap (from to)
-  "Remap FROM major mode to TO when TO is available."
-  (when (fboundp to)
-    (add-to-list 'major-mode-remap-alist (cons from to))))
+;; 允许项目通过自己的 .editorconfig 覆盖缩进和空白字符默认设置；
+;; 现代 Emacs 已内置这项集成。
+(require 'editorconfig)
+(editorconfig-mode 1)
+
+(customize-set-variable
+ 'treesit-enabled-modes
+ '(bash-ts-mode
+   c-ts-mode
+   c++-ts-mode
+   c-or-c++-ts-mode
+   cmake-ts-mode
+   csharp-ts-mode
+   css-ts-mode
+   dockerfile-ts-mode
+   go-ts-mode
+   go-mod-ts-mode
+   html-ts-mode
+   java-ts-mode
+   js-ts-mode
+   json-ts-mode
+   python-ts-mode
+   ruby-ts-mode
+   rust-ts-mode
+   toml-ts-mode
+   tsx-ts-mode
+   typescript-ts-mode
+   yaml-ts-mode))
+
+;; Emacs 31 的标准重映射表不包含这些旧模式名，但内置文件关联仍会使用它们。
+(add-to-list 'major-mode-remap-alist '(html-mode . html-ts-mode))
+(add-to-list 'major-mode-remap-alist '(js-mode . js-ts-mode))
 
 (defun yurikon/add-auto-mode (regexp mode)
   "Use MODE for files matching REGEXP when MODE is available."
   (when (fboundp mode)
     (add-to-list 'auto-mode-alist (cons regexp mode))))
-
-(dolist (remap '((sh-mode . bash-ts-mode)
-                 (c-mode . c-ts-mode)
-                 (c++-mode . c++-ts-mode)
-                 (c-or-c++-mode . c-or-c++-ts-mode)
-                 (csharp-mode . csharp-ts-mode)
-                 (css-mode . css-ts-mode)
-                 (html-mode . html-ts-mode)
-                 (java-mode . java-ts-mode)
-                 (js-mode . js-ts-mode)
-                 (js-json-mode . json-ts-mode)
-                 (python-mode . python-ts-mode)
-                 (ruby-mode . ruby-ts-mode)
-                 (conf-toml-mode . toml-ts-mode)
-                 (yaml-mode . yaml-ts-mode)))
-  (yurikon/add-major-mode-remap (car remap) (cdr remap)))
 
 (dolist (entry '(("\\.json\\'" . json-ts-mode)
                  ("\\.ya?ml\\'" . yaml-ts-mode)
@@ -391,18 +374,13 @@
                  ("\\.cmake\\'" . cmake-ts-mode)))
   (yurikon/add-auto-mode (car entry) (cdr entry)))
 
-;; Extra completion-at-point sources.
-(setq cape-dabbrev-buffer-function #'current-buffer)
-(add-to-list 'completion-at-point-functions #'cape-file)
-(add-to-list 'completion-at-point-functions #'cape-dabbrev)
-
-;; corfu-popupinfo
+;; Corfu 候选文档弹窗。
 (require 'corfu-popupinfo)
 (corfu-popupinfo-mode 1)
 ;; 保留通过 M-t 查看文档的能力，但候选项变化时不再自动创建额外的 child frame。
 (setq corfu-popupinfo-delay nil)
 
-;; Built-in project and LSP support.
+;; 内置项目管理与 LSP 支持。
 (require 'xref)
 (require 'eglot)
 (setq xref-search-program 'ripgrep
@@ -437,12 +415,10 @@
 (require 'tuareg)
 (require 'ocaml-eglot)
 
-;; Syntax checks.
+;; 语法检查。
 (setq flymake-no-changes-timeout 1.0)
-(add-hook 'prog-mode-hook #'flymake-mode)
 
-;; Elisp editing support.
-(require 'package-lint)
+;; Emacs Lisp 编辑支持。
 (require 'helpful)
 
 (defun yurikon/emacs-lisp-setup ()
@@ -458,7 +434,7 @@
 (global-set-key (kbd "C-h k") #'helpful-key)
 (global-set-key (kbd "C-h x") #'helpful-command)
 
-;; Org and org-roam.
+;; Org 与 org-roam。
 (require 'org)
 (setq org-directory "/home/yurikon/Learning/org-learning"
       org-default-notes-file (expand-file-name "notes.org" org-directory))
@@ -503,7 +479,7 @@
 (add-hook 'prog-mode-hook #'display-fill-column-indicator-mode)
 (add-hook 'prog-mode-hook #'hs-minor-mode)
 
-;; Start language servers automatically
+;; 自动启动语言服务器。
 (add-hook 'markdown-mode-hook #'eglot-ensure)
 (add-hook 'gfm-mode-hook #'eglot-ensure)
 (add-hook 'yaml-mode-hook #'eglot-ensure)
@@ -515,40 +491,34 @@
 (add-hook 'tsx-ts-mode-hook #'eglot-ensure)
 
 (defun yurikon/eglot-ensure-after-envrc ()
-  "Refresh direnv for the current buffer before starting Eglot.
+  "在 C/C++ 缓冲区的项目环境准备完成后启动 Eglot。"
+  (when (derived-mode-p 'c-mode 'c-ts-mode
+                        'c++-mode 'c++-ts-mode
+                        'c-or-c++-mode 'c-or-c++-ts-mode)
+    (eglot-ensure)))
 
-This matters for daemon Emacs: project-local tools from a Nix flake are not
-inherited from the shell that launches emacsclient.  Refreshing envrc here
-ensures clangd is resolved from the project's dev shell before Eglot starts."
-  (when (and (bound-and-true-p envrc-mode)
-             (fboundp 'envrc--update))
-    (envrc--update))
-  (eglot-ensure))
+;; Emacs 以守护进程运行，项目工具来自各自的 Nix dev shell。
+;; envrc-mode-hook 是公开接口，并且在缓冲区环境应用完成后运行。
+(require 'envrc)
+(add-hook 'envrc-mode-hook #'yurikon/eglot-ensure-after-envrc)
+(envrc-global-mode 1)
 
-(dolist (hook '(c-mode-hook
-                c-ts-mode-hook
-                c++-mode-hook
-                c++-ts-mode-hook
-                c-or-c++-mode-hook
-                c-or-c++-ts-mode-hook))
-  (add-hook hook #'yurikon/eglot-ensure-after-envrc))
-
-;; Python indentation
+;; Python 缩进。
 (setq python-indent-offset 4
       python-indent-guess-indent-offset-verbose nil
       python-shell-interpreter "python")
 
-;; OCaml: Tuareg provides the major mode. OCaml-eglot adds the
-;; OCaml-specific LSP integration and starts Eglot afterwards.
+;; OCaml：Tuareg 提供主模式，OCaml-eglot 添加 OCaml 专用的 LSP 集成，
+;; 随后启动 Eglot。
 (add-hook 'tuareg-mode-hook #'ocaml-eglot-mode)
 (add-hook 'ocaml-eglot-mode-hook #'eglot-ensure)
 
-;; Soft wrapping for prose buffers.
+;; 为自然语言文本缓冲区启用软换行。
 (add-hook 'markdown-mode-hook #'visual-line-mode)
 (add-hook 'gfm-mode-hook #'visual-line-mode)
 (add-hook 'org-mode-hook #'visual-line-mode)
 
-;; PDF reading inside Emacs.
+;; 在 Emacs 内阅读 PDF。
 (require 'pdf-tools)
 (require 'pdf-occur)
 (add-to-list 'pdf-tools-enabled-modes 'pdf-view-auto-slice-minor-mode)
@@ -559,13 +529,13 @@ ensures clangd is resolved from the project's dev shell before Eglot starts."
             (display-line-numbers-mode 0)
             (auto-revert-mode 1)))
 
-;; Fast Jump
+;; 快速跳转。
 (require 'avy)
 (global-set-key (kbd "C-;") #'avy-goto-char-timer)
 (global-set-key (kbd "M-g w") #'avy-goto-word-1)
 (global-set-key (kbd "M-g l") #'avy-goto-line)
 
-;; Context actions for minibuffer
+;; minibuffer 上下文操作。
 (require 'embark)
 (require 'embark-consult)
 (global-set-key (kbd "C-.") #'embark-act)
@@ -583,7 +553,7 @@ ensures clangd is resolved from the project's dev shell before Eglot starts."
 (require 'multiple-cursors)
 (setq mc/always-run-for-all t)
 
-;; Basic ms
+;; multiple-cursors 基础操作。
 (global-set-key (kbd "C-c m l") #'mc/edit-lines)
 (global-set-key (kbd "C-c m m") #'mc/mark-all-like-this)
 (global-set-key (kbd "C-c m n") #'mc/mark-next-like-this)
@@ -591,24 +561,24 @@ ensures clangd is resolved from the project's dev shell before Eglot starts."
 (global-set-key (kbd "C-c m r") #'mc/mark-all-in-region)
 (global-set-key (kbd "C-c m d") #'mc/mark-all-symbols-like-this-in-defun)
 
-;; Symbol match
+;; 符号匹配。
 (global-set-key (kbd "C-c m s") #'mc/mark-next-like-this-symbol)
 (global-set-key (kbd "C-c m S") #'mc/mark-all-symbols-like-this)
 
-;; Unmark select
+;; 取消或跳过选择。
 (global-set-key (kbd "C-c m u") #'mc/unmark-next-like-this)
 (global-set-key (kbd "C-c m U") #'mc/unmark-previous-like-this)
 (global-set-key (kbd "C-c m k") #'mc/skip-to-next-like-this)
 (global-set-key (kbd "C-c m K") #'mc/skip-to-previous-like-this)
 
-;; Batch edit multiple lines
+;; 批量编辑多行。
 (global-set-key (kbd "C-c m b") #'mc/edit-beginnings-of-lines)
 (global-set-key (kbd "C-c m e") #'mc/edit-ends-of-lines)
 
-;; auto numbers
+;; 自动插入序号。
 (global-set-key (kbd "C-c m #") #'mc/insert-numbers)
 
-;; nerd icons
+;; Nerd Icons 图标。
 (require 'nerd-icons)
 (require 'nerd-icons-completion)
 (require 'nerd-icons-dired)
@@ -639,7 +609,7 @@ ensures clangd is resolved from the project's dev shell before Eglot starts."
 
 (global-set-key (kbd "C-c o") #'yurikon/open-current-file-externally)
 
-;; use mu4e for mail frontend
+;; 使用 mu4e 作为邮件前端。
 (require 'mu4e)
 (setq mail-user-agent 'mu4e-user-agent)
 (setq mu4e-maildir "~/Mail")
@@ -693,7 +663,7 @@ ensures clangd is resolved from the project's dev shell before Eglot starts."
        :vars '((user-mail-address . "yuriisbest@163.com")
                (user-full-name . "Yurikon")))))
 
-;; Keep custom.el separate from the generated init file.
+;; 将 custom.el 与生成的 init 文件分开保存。
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (when (file-exists-p custom-file)
   (load custom-file))

@@ -19,7 +19,6 @@ in
       enable = true;
       package = emacsPackages.emacsWithPackages (
         epkgs: with epkgs; [
-          cape
           consult
           corfu
           gruvbox-theme
@@ -67,10 +66,6 @@ in
           embark-consult
           envrc
           rainbow-delimiters
-          package-lint
-          prescient
-          corfu-prescient
-          vertico-prescient
           helpful
           multiple-cursors
 
