@@ -71,6 +71,7 @@ in
 
           tempel
           tempel-collection
+          eglot-tempel
 
           tuareg
           ocaml-eglot

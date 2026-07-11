@@ -312,8 +312,20 @@
 (require 'tempel)
 (require 'tempel-collection)
 
-(global-set-key (kbd "C-c y c") #'tempel-complete)
-(global-set-key (kbd "C-c y i") #'tempel-insert)
+(defun yurikon/tempel-setup-capf ()
+  "按照 Tempel 推荐方式，在当前缓冲区启用精确匹配的模板展开。"
+  (setq-local completion-at-point-functions
+              (cons #'tempel-expand completion-at-point-functions)))
+
+(add-hook 'conf-mode-hook #'yurikon/tempel-setup-capf)
+(add-hook 'prog-mode-hook #'yurikon/tempel-setup-capf)
+(add-hook 'text-mode-hook #'yurikon/tempel-setup-capf)
+(global-set-key (kbd "M-+") #'tempel-complete)
+(global-set-key (kbd "M-*") #'tempel-insert)
+
+;; 将语言服务器返回的代码片段交给 Tempel，补全函数时展开括号和参数占位符。
+(require 'eglot-tempel)
+(eglot-tempel-mode 1)
 
 ;; 优先使用 Emacs 提供的官方 tree-sitter 主模式。第 4 级会增加开销，
 ;; 但额外的高亮细节在日常编辑中并不明显。
@@ -383,10 +395,16 @@
 ;; 内置项目管理与 LSP 支持。
 (require 'xref)
 (require 'eglot)
+(require 'eldoc)
 (setq xref-search-program 'ripgrep
       xref-show-definitions-function #'xref-show-definitions-completing-read
       eglot-autoshutdown t
-      eglot-events-buffer-config '(:size 0 :format full))
+      eglot-events-buffer-config '(:size 0 :format full)
+      eldoc-idle-delay 0.3
+      eldoc-echo-area-use-multiline-p 1)
+
+;; Eglot 通过内置 ElDoc 在回显区显示光标处符号的签名、参数和类型。
+(add-hook 'eglot-managed-mode-hook #'eldoc-mode)
 (add-to-list 'eglot-server-programs
              '((markdown-mode gfm-mode) . ("markdown-oxide")))
 (add-to-list 'eglot-server-programs
