@@ -371,10 +371,25 @@
           (indent-according-to-mode)))
     (newline-and-indent)))
 
-(defun yurikon/c++-editing-setup ()
-  "为 C++ tree-sitter 缓冲区设置可靠的 RET 行为。"
-  (keymap-local-set "RET" #'yurikon/c++-newline-and-indent))
+(require 'hideshow)
 
+;; C++ 折叠按键集中放在这里，之后只需修改这张表。
+(defconst yurikon/c++-fold-keybindings
+  '(("C-c z z" . hs-toggle-hiding)
+    ("C-c z h" . hs-hide-block)
+    ("C-c z s" . hs-show-block)
+    ("C-c z a" . hs-hide-all)
+    ("C-c z r" . hs-show-all))
+  "C++ buffers 中使用的代码折叠按键。")
+
+(defun yurikon/c++-editing-setup ()
+  "设置 C++ 缓冲区的编辑行为和代码折叠按键。"
+  (keymap-local-set "RET" #'yurikon/c++-newline-and-indent)
+  (hs-minor-mode 1)
+  (dolist (binding yurikon/c++-fold-keybindings)
+    (keymap-local-set (car binding) (cdr binding))))
+
+(add-hook 'c++-mode-hook #'yurikon/c++-editing-setup)
 (add-hook 'c++-ts-mode-hook #'yurikon/c++-editing-setup)
 
 ;; 允许项目通过自己的 .editorconfig 覆盖缩进和空白字符默认设置；
@@ -539,7 +554,6 @@
 (global-set-key (kbd "C-c n r") #'org-roam-db-sync)
 
 (add-hook 'prog-mode-hook #'display-fill-column-indicator-mode)
-(add-hook 'prog-mode-hook #'hs-minor-mode)
 
 ;; 自动启动语言服务器。
 (add-hook 'markdown-mode-hook #'eglot-ensure)
