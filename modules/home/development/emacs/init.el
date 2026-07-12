@@ -312,6 +312,12 @@
 (require 'tempel)
 (require 'tempel-collection)
 
+;; Tempel 活跃时，使用更顺手的方括号键在占位符之间移动。
+(keymap-unset tempel-map "M-{")
+(keymap-unset tempel-map "M-}")
+(keymap-set tempel-map "M-[" #'tempel-previous)
+(keymap-set tempel-map "M-]" #'tempel-next)
+
 (defun yurikon/tempel-setup-capf ()
   "按照 Tempel 推荐方式，在当前缓冲区启用精确匹配的模板展开。"
   (setq-local completion-at-point-functions
@@ -334,6 +340,38 @@
       c-ts-mode-enable-doxygen t
       c-ts-indent-offset 2
       c-basic-offset 2)
+
+(defun yurikon/c-ts-indent-style ()
+  "在 GNU 风格基础上修正类内函数定义的缩进。"
+  (let* ((language (if (derived-mode-p 'c++-ts-mode) 'cpp 'c))
+         (rules (alist-get language
+                           (c-ts-mode--simple-indent-rules language 'gnu))))
+    `((,language
+       . (((match "function_definition" "field_declaration_list")
+           parent-bol c-ts-mode-indent-offset)
+          ,@rules)))))
+
+(setq c-ts-mode-indent-style #'yurikon/c-ts-indent-style)
+
+(defun yurikon/c++-newline-and-indent ()
+  "换行并缩进；在相邻花括号之间将光标留在缩进后的空行。"
+  (interactive)
+  (if (and (eq (char-before) ?{)
+           (eq (char-after) ?}))
+      (progn
+        (newline 2)
+        (forward-line -1)
+        (indent-according-to-mode)
+        (save-excursion
+          (forward-line 1)
+          (indent-according-to-mode)))
+    (newline-and-indent)))
+
+(defun yurikon/c++-editing-setup ()
+  "为 C++ tree-sitter 缓冲区设置可靠的 RET 行为。"
+  (keymap-local-set "RET" #'yurikon/c++-newline-and-indent))
+
+(add-hook 'c++-ts-mode-hook #'yurikon/c++-editing-setup)
 
 ;; 允许项目通过自己的 .editorconfig 覆盖缩进和空白字符默认设置；
 ;; 现代 Emacs 已内置这项集成。
@@ -414,6 +452,8 @@
 (add-to-list 'eglot-server-programs
              '((python-mode python-ts-mode)
                "basedpyright-langserver" "--stdio"))
+(add-to-list 'eglot-server-programs
+             '(cmake-ts-mode . ("cmake-language-server")))
 (add-to-list 'eglot-server-programs
              '((c-mode c-ts-mode c++-mode c++-ts-mode c-or-c++-mode c-or-c++-ts-mode)
                . ("clangd"
@@ -509,10 +549,11 @@
 (add-hook 'tsx-ts-mode-hook #'eglot-ensure)
 
 (defun yurikon/eglot-ensure-after-envrc ()
-  "在 C/C++ 缓冲区的项目环境准备完成后启动 Eglot。"
+  "在项目环境准备完成后为 C、C++ 和 CMake 启动 Eglot。"
   (when (derived-mode-p 'c-mode 'c-ts-mode
                         'c++-mode 'c++-ts-mode
-                        'c-or-c++-mode 'c-or-c++-ts-mode)
+                        'c-or-c++-mode 'c-or-c++-ts-mode
+                        'cmake-ts-mode)
     (eglot-ensure)))
 
 ;; Emacs 以守护进程运行，项目工具来自各自的 Nix dev shell。
