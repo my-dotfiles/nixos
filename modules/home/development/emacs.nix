@@ -80,6 +80,7 @@ in
 
           nerd-icons
           nerd-icons-completion
+          nerd-icons-corfu
           nerd-icons-dired
 
           mu4e

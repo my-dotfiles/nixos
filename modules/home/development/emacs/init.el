@@ -304,6 +304,10 @@
 
 (add-hook 'gud-mode-hook #'yurikon/gud-corfu-setup)
 
+;; 将构建工具输出的 ANSI SGR 转义序列转换为 compilation 缓冲区中的颜色。
+(require 'ansi-color)
+(add-hook 'compilation-filter-hook #'ansi-color-compilation-filter)
+
 ;; 保持 TAB 行为确定：Corfu 弹窗之外只执行缩进。仍可通过 M-TAB 显式补全，
 ;; Corfu 也会自动弹出。
 (setq tab-always-indent t
@@ -640,9 +644,11 @@
 ;; Nerd Icons 图标。
 (require 'nerd-icons)
 (require 'nerd-icons-completion)
+(require 'nerd-icons-corfu)
 (require 'nerd-icons-dired)
 (nerd-icons-completion-mode 1)
 (add-hook 'marginalia-mode-hook #'nerd-icons-completion-marginalia-setup)
+(add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter)
 (add-hook 'dired-mode-hook #'nerd-icons-dired-mode)
 
 (global-hl-line-mode 1)
