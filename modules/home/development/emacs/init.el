@@ -248,6 +248,12 @@
 (global-set-key (kbd "M-g g") #'consult-goto-line)
 (global-set-key (kbd "C-c f") #'project-find-file)
 (global-set-key (kbd "C-c s") #'consult-ripgrep)
+(global-set-key (kbd "M-g i") #'consult-imenu)
+(global-set-key (kbd "M-g I") #'consult-imenu-multi)
+(global-set-key (kbd "M-g e") #'consult-flymake)
+(global-set-key (kbd "M-g o") #'consult-outline)
+
+
 
 ;; 根据窗口上显示的按键快速选择可见窗口。
 (require 'ace-window)
@@ -451,10 +457,12 @@
 
 ;; 内置项目管理与 LSP 支持。
 (require 'xref)
+(require 'consult-xref)
 (require 'eglot)
 (require 'eldoc)
 (setq xref-search-program 'ripgrep
-      xref-show-definitions-function #'xref-show-definitions-completing-read
+      xref-show-definitions-function #'consult-xref
+      xref-show-xrefs-function #'consult-xref
       eglot-autoshutdown t
       eglot-events-buffer-config '(:size 0 :format full)
       eldoc-idle-delay 0.3
@@ -610,7 +618,6 @@
 (require 'avy)
 (global-set-key (kbd "C-;") #'avy-goto-char-timer)
 (global-set-key (kbd "M-g w") #'avy-goto-word-1)
-(global-set-key (kbd "M-g l") #'avy-goto-line)
 
 ;; minibuffer 上下文操作。
 (require 'embark)
