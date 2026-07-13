@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.mySystem.desktop.steam;
@@ -7,6 +12,8 @@ in
   options.mySystem.desktop.steam.enable = lib.mkEnableOption "Steam gaming platform";
 
   config = lib.mkIf cfg.enable {
+    environment.systemPackages = [ pkgs.protontricks ];
+
     programs.steam = {
       enable = true;
       package = pkgs.steam.override {
