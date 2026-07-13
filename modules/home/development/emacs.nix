@@ -28,6 +28,8 @@ in
           marginalia
           markdown-mode
           nix-mode
+          haskell-mode
+          haskell-ts-mode
           org-roam
           orderless
           pdf-tools
@@ -44,6 +46,7 @@ in
               tree-sitter-go
               tree-sitter-gomod
               tree-sitter-html
+              tree-sitter-haskell
               tree-sitter-java
               tree-sitter-javascript
               tree-sitter-json

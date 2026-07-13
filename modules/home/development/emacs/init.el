@@ -44,7 +44,7 @@
 (set-language-environment "UTF-8")
 (prefer-coding-system 'utf-8)
 
-(defconst yurikon/default-font-family "Iosevka Nerd Font Mono"
+(defconst yurikon/default-font-family "JetBrainsMono Nerd Font Mono"
   "Default Latin monospace font family.")
 
 (defconst yurikon/default-font-size 13
@@ -345,8 +345,9 @@
 
 ;; 优先使用 Emacs 提供的官方 tree-sitter 主模式。第 4 级会增加开销，
 ;; 但额外的高亮细节在日常编辑中并不明显。
+;; 本次先尝试使用第 4 级别
 (require 'treesit)
-(setq treesit-font-lock-level 3
+(setq treesit-font-lock-level 4
       c-ts-mode-enable-doxygen t
       c-ts-indent-offset 2
       c-basic-offset 2)
@@ -415,6 +416,7 @@
    dockerfile-ts-mode
    go-ts-mode
    go-mod-ts-mode
+   haskell-ts-mode
    html-ts-mode
    java-ts-mode
    js-ts-mode
@@ -441,6 +443,7 @@
                  ("\\.toml\\'" . toml-ts-mode)
                  ("\\.go\\'" . go-ts-mode)
                  ("\\`go\\.mod\\'" . go-mod-ts-mode)
+                 ("\\.hs\\'" . haskell-ts-mode)
                  ("\\.rs\\'" . rust-ts-mode)
                  ("\\.ts\\'" . typescript-ts-mode)
                  ("\\.tsx\\'" . tsx-ts-mode)
@@ -466,7 +469,8 @@
       eglot-autoshutdown t
       eglot-events-buffer-config '(:size 0 :format full)
       eldoc-idle-delay 0.3
-      eldoc-echo-area-use-multiline-p 1)
+      ;; 浮点数表示相对于 frame 高度的比例，可随窗口大小自动调整。
+      eldoc-echo-area-use-multiline-p 0.25)
 
 ;; Eglot 通过内置 ElDoc 在回显区显示光标处符号的签名、参数和类型。
 (add-hook 'eglot-managed-mode-hook #'eldoc-mode)
@@ -480,6 +484,9 @@
              '((python-mode python-ts-mode)
                "basedpyright-langserver" "--stdio"))
 (add-to-list 'eglot-server-programs
+             '((haskell-mode haskell-ts-mode)
+               . ("haskell-language-server-wrapper" "--lsp")))
+(add-to-list 'eglot-server-programs
              '(cmake-ts-mode . ("cmake-language-server")))
 (add-to-list 'eglot-server-programs
              '((c-mode c-ts-mode c++-mode c++-ts-mode c-or-c++-mode c-or-c++-ts-mode)
@@ -490,6 +497,7 @@
 
 (with-eval-after-load 'eglot
   (keymap-set eglot-mode-map "C-c l a" #'eglot-code-actions)
+  (keymap-set eglot-mode-map "C-c l d" #'eldoc-doc-buffer)
   (keymap-set eglot-mode-map "C-c l r" #'eglot-rename)
   (keymap-set eglot-mode-map "C-c l f" #'eglot-format-buffer)
   (keymap-set eglot-mode-map "C-c l o" #'eglot-code-action-organize-imports))
@@ -497,8 +505,29 @@
 (require 'nix-mode)
 (require 'markdown-mode)
 (require 'yaml-mode)
+(require 'haskell-mode)
+(require 'haskell-ts-mode)
 (require 'tuareg)
 (require 'ocaml-eglot)
+
+;; Haskell 源文件使用 Tree-sitter 做解析和高亮。haskell-ts-mode 目前默认
+;; 关闭其缩进实现，因此这里显式启用；最终的统一排版交给 HLS/Fourmolu。
+(setq haskell-ts-font-lock-level 4
+      haskell-ts-use-indent t
+      haskell-ts-ghci "ghci")
+
+(defun yurikon/haskell-editing-setup ()
+  "Configure editing and building in Haskell source buffers."
+  (setq-local indent-tabs-mode nil
+              tab-width 2
+              compile-command "cabal build"))
+
+(add-hook 'haskell-mode-hook #'yurikon/haskell-editing-setup)
+(add-hook 'haskell-ts-mode-hook #'yurikon/haskell-editing-setup)
+
+;; HLS 默认使用 Ormolu；项目 dev shell 已提供 Fourmolu，所以明确选择它。
+(setq-default eglot-workspace-configuration
+              '((haskell . ((formattingProvider . "fourmolu")))))
 
 ;; 语法检查。
 (setq flymake-no-changes-timeout 1.0)
@@ -575,11 +604,12 @@
 (add-hook 'tsx-ts-mode-hook #'eglot-ensure)
 
 (defun yurikon/eglot-ensure-after-envrc ()
-  "在项目环境准备完成后为 C、C++ 和 CMake 启动 Eglot。"
+  "Start Eglot after direnv has made project-local tools available."
   (when (derived-mode-p 'c-mode 'c-ts-mode
                         'c++-mode 'c++-ts-mode
                         'c-or-c++-mode 'c-or-c++-ts-mode
-                        'cmake-ts-mode)
+                        'cmake-ts-mode
+                        'haskell-mode 'haskell-ts-mode)
     (eglot-ensure)))
 
 ;; Emacs 以守护进程运行，项目工具来自各自的 Nix dev shell。
@@ -587,6 +617,12 @@
 (require 'envrc)
 (add-hook 'envrc-mode-hook #'yurikon/eglot-ensure-after-envrc)
 (envrc-global-mode 1)
+
+;; haskell-mode 为 Literate Haskell 和 Cabal 文件提供专用主模式；普通 .hs
+;; 文件的规则放在列表最前面，确保使用上面的 Tree-sitter 主模式。
+(add-to-list 'auto-mode-alist '("\\.lhs\\'" . haskell-mode))
+(add-to-list 'auto-mode-alist '("\\.cabal\\'" . haskell-cabal-mode))
+(add-to-list 'auto-mode-alist '("\\.hs\\'" . haskell-ts-mode))
 
 ;; Python 缩进。
 (setq python-indent-offset 4
