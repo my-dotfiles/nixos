@@ -92,9 +92,8 @@ let
       nerd-icons
       nerd-icons-completion
       nerd-icons-dired
-
-      kkp
     ]
+    ++ lib.optionals cfg.enableKkp (optionalEmacsPkg kkp)
     ++ lib.optionals cfg.enablePdfTools (optionalEmacsPkg pdf-tools)
     ++ lib.optionals cfg.enableMail (optionalEmacsPkg mu4e ++ optionalEmacsPkg org-mime);
   emacsPackageEnv = pkgs.buildEnv {
@@ -198,6 +197,16 @@ let
       ''
     else
       "";
+  kkpConfig =
+    if cfg.enableKkp then
+      ''
+        (require 'kkp)
+        (add-hook 'tty-setup-hook #'global-kkp-mode)
+        (unless (display-graphic-p)
+          (global-kkp-mode 1))
+      ''
+    else
+      "";
   packageBootstrap = ''
     ;; Editor packages are built by Nix. On macOS, Homebrew emacs-plus supplies
     ;; the application and command-line binaries.
@@ -218,6 +227,7 @@ let
         "@open-command@"
         "@mail-config@"
         "@pdf-tools-config@"
+        "@kkp-config@"
         "@package-bootstrap@"
       ]
       [
@@ -226,6 +236,7 @@ let
         openCommand
         mailConfig
         pdfToolsConfig
+        kkpConfig
         packageBootstrap
       ]
       (builtins.readFile ./emacs/init.el);
@@ -238,6 +249,11 @@ in
       type = lib.types.bool;
       default = pkgs.stdenv.isLinux;
       description = "Enable pdf-tools package and Emacs setup.";
+    };
+    enableKkp = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Enable kkp terminal keyboard protocol support.";
     };
   };
 

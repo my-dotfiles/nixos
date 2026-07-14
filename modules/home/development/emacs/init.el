@@ -70,10 +70,7 @@
 (add-hook 'after-make-frame-functions #'yurikon/apply-gui-fonts-later)
 (add-hook 'server-after-make-frame-hook #'yurikon/apply-gui-fonts-later)
 
-(require 'kkp)
-(add-hook 'tty-setup-hook #'global-kkp-mode)
-(unless (display-graphic-p)
-  (global-kkp-mode 1))
+@kkp-config@
 
 (dolist (theme-library '("gruvbox-dark-hard-theme" "ef-themes" "modus-themes"))
   (add-to-list 'custom-theme-load-path
