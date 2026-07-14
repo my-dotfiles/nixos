@@ -470,7 +470,7 @@
       eglot-events-buffer-config '(:size 0 :format full)
       eldoc-idle-delay 0.3
       ;; 浮点数表示相对于 frame 高度的比例，可随窗口大小自动调整。
-      eldoc-echo-area-use-multiline-p 0.25)
+      eldoc-echo-area-use-multiline-p 0.20)
 
 ;; Eglot 通过内置 ElDoc 在回显区显示光标处符号的签名、参数和类型。
 (add-hook 'eglot-managed-mode-hook #'eldoc-mode)
