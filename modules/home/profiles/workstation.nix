@@ -19,12 +19,12 @@
   myHome.cli.prompt.enable = true;
   myHome.cli.ssh.enable = true;
   myHome.cli.terminal.enable = true;
-  myHome.cli.ghostty.enable = true;
+  myHome.cli.alacritty.enable = true;
   myHome.cli.htop.enable = true;
   myHome.cli.lazygit.enable = true;
-  myHome.cli.tmux.enable = true;
   myHome.cli.glow.enable = true;
   myHome.cli.yazi.enable = true;
+  myHome.cli.zellij.enable = true;
 
   myHome.development.emacs.enable = true;
   myHome.development.zed.enable = true;

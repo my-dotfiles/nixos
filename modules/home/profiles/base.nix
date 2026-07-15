@@ -18,6 +18,7 @@
     ../cli/tmux.nix
     ../cli/glow.nix
     ../cli/yazi.nix
+    ../cli/zellij.nix
     ../development/editor.nix
     ../development/emacs.nix
     ../development/zed.nix

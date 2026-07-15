@@ -8,7 +8,7 @@
 let
   cfg = config.myHome.desktop.sway;
   mod = "Mod4";
-  terminal = "ghostty";
+  terminal = "alacritty";
   menu = "fuzzel";
   fileManager = "xdg-open ${config.home.homeDirectory}";
   primaryOutput = "DP-1";
@@ -222,8 +222,8 @@ in
         Steam = "S";
         "com.follow.clash" = "C";
         FlClash = "C";
-        "com.mitchellh.ghostty" = "T";
-        ghostty = "T";
+        Alacritty = "T";
+        alacritty = "T";
         "org.pwmt.zathura" = "D";
         zotero = "Z";
         other = {
