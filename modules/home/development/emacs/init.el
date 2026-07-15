@@ -83,6 +83,15 @@
 (add-hook 'after-make-frame-functions #'yurikon/apply-gui-fonts-later)
 (add-hook 'server-after-make-frame-hook #'yurikon/apply-gui-fonts-later)
 
+;; 让 JetBrains Mono 使用其 OpenType 编程连字。缓冲区中的文本不会被
+;; 替换，例如 != 仍然是两个可独立编辑和复制的字符，只改变图形渲染。
+(require 'ligature)
+(ligature-set-ligatures
+ 'prog-mode
+ '("!=" "!==" "==" "===" "<=" ">=" "=>" "->" "<-" "<=>"
+   "&&" "||" "::" "++" "--" "<<" ">>" ">>>" "<|" "|>"))
+(global-ligature-mode 1)
+
 (dolist (theme-library '("gruvbox-dark-hard-theme" "ef-themes" "modus-themes"))
   (add-to-list 'custom-theme-load-path
                (file-name-directory (locate-library theme-library))))

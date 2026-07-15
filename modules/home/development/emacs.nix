@@ -30,6 +30,7 @@ in
           nix-mode
           haskell-mode
           haskell-ts-mode
+          ligature
           org-roam
           orderless
           pdf-tools
