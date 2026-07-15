@@ -31,6 +31,7 @@
     ../desktop/lockscreen.nix
     ../desktop/mime.nix
     ../desktop/mpv.nix
+    ../desktop/obs.nix
     ../desktop/niri.nix
     ../desktop/plasma.nix
     ../desktop/sway.nix
