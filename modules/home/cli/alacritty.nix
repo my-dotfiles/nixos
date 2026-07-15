@@ -1,9 +1,4 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}:
+{ config, lib, ... }:
 
 let
   cfg = config.myHome.cli.alacritty;
@@ -17,14 +12,6 @@ in
       theme = "base16_default_dark";
       settings = {
         env.WINIT_UNIX_BACKEND = "wayland";
-        terminal.shell = {
-          program = lib.getExe pkgs.zellij;
-          args = [
-            "attach"
-            "--create"
-            "main"
-          ];
-        };
         font = {
           size = 13;
           normal = {
