@@ -15,6 +15,7 @@
       locale.enable = true;
       networking.enable = true;
       nix.enable = true;
+      nixGc.enable = true;
       packages.enable = true;
       users.enable = true;
     };

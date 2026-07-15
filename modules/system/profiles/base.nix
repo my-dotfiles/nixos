@@ -6,6 +6,7 @@
     ../core/locale.nix
     ../core/networking.nix
     ../core/nix.nix
+    ../core/nix-gc.nix
     ../core/packages.nix
     ../core/users.nix
     ../desktop/thunar.nix
