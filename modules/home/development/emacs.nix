@@ -69,7 +69,6 @@ in
           embark
           embark-consult
           envrc
-          rainbow-delimiters
           helpful
           multiple-cursors
 

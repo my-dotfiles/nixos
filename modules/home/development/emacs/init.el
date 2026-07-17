@@ -96,6 +96,12 @@
   (add-to-list 'custom-theme-load-path
                (file-name-directory (locate-library theme-library))))
 
+;; 使用 Modus 官方的低强度预设：保留日间与夜间主题的明暗对比，
+;; 同时降低强调色的饱和度和视觉存在感。覆盖必须在加载主题前设置。
+(require 'modus-themes)
+(setq modus-themes-common-palette-overrides
+      modus-themes-preset-overrides-faint)
+
 (defconst yurikon/light-theme 'modus-operandi
   "Theme used by `switch-theme' for daytime editing.")
 
@@ -352,11 +358,10 @@
 (require 'eglot-tempel)
 (eglot-tempel-mode 1)
 
-;; 优先使用 Emacs 提供的官方 tree-sitter 主模式。第 4 级会增加开销，
-;; 但额外的高亮细节在日常编辑中并不明显。
-;; 本次先尝试使用第 4 级别
+;; 优先使用 Emacs 提供的官方 tree-sitter 主模式。第 2 级保留
+;; 注释、定义、关键字、字符串和类型等基础结构，避免过多语义配色。
 (require 'treesit)
-(setq treesit-font-lock-level 4
+(setq treesit-font-lock-level 2
       c-ts-mode-enable-doxygen t
       c-ts-indent-offset 2
       c-basic-offset 2)
@@ -480,6 +485,15 @@
       eldoc-idle-delay 0.3
       ;; 浮点数表示相对于 frame 高度的比例，可随窗口大小自动调整。
       eldoc-echo-area-use-multiline-p 0.20)
+
+;; clangd 的语义 token 会绕过 tree-sitter 高亮层级，再次为普通
+;; 变量、参数和函数调用着色。关闭它，但保留有用的 inlay hints。
+(defun yurikon/eglot-restrained-highlighting ()
+  "Keep Tree-sitter highlighting authoritative in Eglot buffers."
+  (when (eglot-managed-p)
+    (eglot-semantic-tokens-mode -1)))
+
+(add-hook 'eglot-managed-mode-hook #'yurikon/eglot-restrained-highlighting)
 
 ;; Eglot 通过内置 ElDoc 在回显区显示光标处符号的签名、参数和类型。
 (add-hook 'eglot-managed-mode-hook #'eldoc-mode)
@@ -674,9 +688,6 @@
 (setq prefix-help-command #'embark-prefix-help-command)
 
 (add-hook 'embark-collect-mode-hook #'consult-preview-at-point-mode)
-
-(require 'rainbow-delimiters)
-(add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
 
 
 (require 'multiple-cursors)
