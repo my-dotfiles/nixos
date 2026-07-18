@@ -26,12 +26,14 @@ in
         "icon_theme": "Zed (Default)",
         "base_keymap": "Emacs",
         "cursor_shape": "block",
+        "ui_font_family": "JetBrainsMono Nerd Font Mono",
         "ui_font_size": 16,
+        "buffer_font_family": "JetBrainsMono Nerd Font Mono",
         "buffer_font_size": 15,
         "theme": {
           "mode": "dark",
           "light": "Gruvbox Light",
-          "dark": "One Dark"
+          "dark": "Ayu Dark"
         },
         "load_direnv": "direct",
         "lsp": {
