@@ -16,9 +16,6 @@
       read-process-output-max (* 1024 1024))
 
 ;; 这些变量进入主模式后会变成缓冲区局部变量，因此应设置默认值，
-;; 而不是只修改启动缓冲区中的值。
-(setq-default indent-tabs-mode nil
-              tab-width 2
               fill-column 100
               truncate-lines t)
 
@@ -362,9 +359,14 @@
 ;; 注释、定义、关键字、字符串和类型等基础结构，避免过多语义配色。
 (require 'treesit)
 (setq treesit-font-lock-level 2
+      treesit-auto-install-grammar 'always
       c-ts-mode-enable-doxygen t
       c-ts-indent-offset 2
       c-basic-offset 2)
+
+;; Emacs 31 在启用 Tree-sitter 主模式时自动安装尚未提供的 grammar。
+;; 常用 grammar 仍由 Nix 预装，以便配置可复现且离线可用。
+(customize-set-variable 'treesit-enabled-modes t)
 
 (defun yurikon/c-ts-indent-style ()
   "在 GNU 风格基础上修正类内函数定义的缩进。"
@@ -417,31 +419,6 @@
 ;; 现代 Emacs 已内置这项集成。
 (require 'editorconfig)
 (editorconfig-mode 1)
-
-(customize-set-variable
- 'treesit-enabled-modes
- '(bash-ts-mode
-   c-ts-mode
-   c++-ts-mode
-   c-or-c++-ts-mode
-   cmake-ts-mode
-   csharp-ts-mode
-   css-ts-mode
-   dockerfile-ts-mode
-   go-ts-mode
-   go-mod-ts-mode
-   haskell-ts-mode
-   html-ts-mode
-   java-ts-mode
-   js-ts-mode
-   json-ts-mode
-   python-ts-mode
-   ruby-ts-mode
-   rust-ts-mode
-   toml-ts-mode
-   tsx-ts-mode
-   typescript-ts-mode
-   yaml-ts-mode))
 
 ;; Emacs 31 的标准重映射表不包含这些旧模式名，但内置文件关联仍会使用它们。
 (add-to-list 'major-mode-remap-alist '(html-mode . html-ts-mode))
@@ -527,11 +504,40 @@
 
 (require 'nix-mode)
 (require 'markdown-mode)
+(require 'mermaid-mode)
+(require 'mermaid-ts-mode)
 (require 'yaml-mode)
 (require 'haskell-mode)
 (require 'haskell-ts-mode)
 (require 'tuareg)
 (require 'ocaml-eglot)
+
+;; Mermaid 文件默认使用 Tree-sitter 解析；mermaid-mode 继续提供 mmdc
+;; 编译、预览和 Org Babel 支持。显式 source recipe 也让 Emacs 31 能在
+;; Nix grammar 不可用时自动安装缺失的 parser。
+(add-to-list 'treesit-language-source-alist
+             '(mermaid "https://github.com/monaqa/tree-sitter-mermaid"))
+(setq mermaid-mmdc-location "@mmdc@"
+      mermaid-output-format ".svg"
+      mermaid-ts-indent-level 2)
+
+(defun yurikon/ensure-mermaid-grammar (&rest _)
+  "Ensure the Mermaid Tree-sitter grammar exists before entering its TS mode."
+  (unless (treesit-ensure-installed 'mermaid)
+    (user-error "Unable to install the Mermaid Tree-sitter grammar")))
+
+(advice-add 'mermaid-ts-mode :before #'yurikon/ensure-mermaid-grammar)
+
+(dolist (binding '(("C-c C-c" . mermaid-compile)
+                   ("C-c C-f" . mermaid-compile-file)
+                   ("C-c C-b" . mermaid-compile-buffer)
+                   ("C-c C-r" . mermaid-compile-region)
+                   ("C-c C-o" . mermaid-open-browser)
+                   ("C-c C-d" . mermaid-open-doc)))
+  (keymap-set mermaid-ts-mode-map (car binding) (cdr binding)))
+
+(add-to-list 'auto-mode-alist '("\\.mermaid\\'" . mermaid-ts-mode))
+(add-to-list 'auto-mode-alist '("\\.mmd\\'" . mermaid-ts-mode))
 
 ;; Haskell 源文件使用 Tree-sitter 做解析和高亮。haskell-ts-mode 目前默认
 ;; 关闭其缩进实现，因此这里显式启用；最终的统一排版交给 HLS/Fourmolu。
@@ -627,13 +633,19 @@
 (add-hook 'tsx-ts-mode-hook #'eglot-ensure)
 
 (defun yurikon/eglot-ensure-after-envrc ()
-  "Start Eglot after direnv has made project-local tools available."
-  (when (derived-mode-p 'c-mode 'c-ts-mode
-                        'c++-mode 'c++-ts-mode
-                        'c-or-c++-mode 'c-or-c++-ts-mode
-                        'cmake-ts-mode
-                        'haskell-mode 'haskell-ts-mode)
-    (eglot-ensure)))
+  "Start Eglot when direnv has provided the current mode's language server."
+  (let ((server
+         (cond
+          ((derived-mode-p 'c-mode 'c-ts-mode
+                           'c++-mode 'c++-ts-mode
+                           'c-or-c++-mode 'c-or-c++-ts-mode)
+           "clangd")
+          ((derived-mode-p 'cmake-ts-mode)
+           "cmake-language-server")
+          ((derived-mode-p 'haskell-mode 'haskell-ts-mode)
+           "haskell-language-server-wrapper"))))
+    (when (and server (executable-find server))
+      (eglot-ensure))))
 
 ;; Emacs 以守护进程运行，项目工具来自各自的 Nix dev shell。
 ;; envrc-mode-hook 是公开接口，并且在缓冲区环境应用完成后运行。
@@ -691,6 +703,16 @@
 
 
 (require 'multiple-cursors)
+;; 旧版 multiple-cursors 生成的 ~/.emacs.d/.mc-lists.el 没有
+;; lexical-binding cookie，Emacs 31 加载它时会报警。将可变状态放进
+;; XDG state；当前版本首次写入时会生成带 cookie 的新文件。
+(let ((state-directory
+       (expand-file-name "emacs/"
+                         (or (getenv "XDG_STATE_HOME")
+                             (expand-file-name ".local/state/" user-home-directory)))))
+  (make-directory state-directory t)
+  (setq mc/list-file (expand-file-name "multiple-cursors-lists.el" state-directory)))
+
 (setq mc/always-run-for-all t)
 
 ;; multiple-cursors 基础操作。

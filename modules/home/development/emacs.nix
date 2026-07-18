@@ -9,6 +9,8 @@ let
   cfg = config.myHome.development.emacs;
   emacsPackages = pkgs.emacsPackagesFor pkgs.emacs31-pgtk;
   treeSitterDoxygen = pkgs.vimPlugins.nvim-treesitter.builtGrammars.doxygen;
+  treeSitterMermaid = pkgs.vimPlugins.nvim-treesitter.builtGrammars.mermaid;
+  mmdc = lib.getExe' pkgs.mermaid-cli "mmdc";
   wlCopy = lib.getExe' pkgs.wl-clipboard "wl-copy";
 in
 {
@@ -27,6 +29,8 @@ in
           magit
           marginalia
           markdown-mode
+          mermaid-mode
+          mermaid-ts-mode
           nix-mode
           haskell-mode
           haskell-ts-mode
@@ -51,6 +55,7 @@ in
               tree-sitter-java
               tree-sitter-javascript
               tree-sitter-json
+              treeSitterMermaid
               tree-sitter-python
               tree-sitter-ruby
               tree-sitter-rust
@@ -124,9 +129,17 @@ in
       wl-clipboard
     ];
 
-    home.file.".emacs.d/init.el".text = builtins.replaceStrings [ "@wl-copy@" ] [ wlCopy ] (
-      builtins.readFile ./emacs/init.el
-    );
+    home.file.".emacs.d/init.el".text =
+      builtins.replaceStrings
+        [
+          "@mmdc@"
+          "@wl-copy@"
+        ]
+        [
+          mmdc
+          wlCopy
+        ]
+        (builtins.readFile ./emacs/init.el);
 
     home.file.".emacs.d/early-init.el".source = ./emacs/early-init.el;
 

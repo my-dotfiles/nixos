@@ -34,6 +34,7 @@ in
       tokei
       cloc
       mdcat
+      mermaid-cli
       pandoc
     ];
 
