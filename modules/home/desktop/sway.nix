@@ -7,11 +7,10 @@
 
 let
   cfg = config.myHome.desktop.sway;
-  mod = "Mod4";
   appRunner = "${lib.getExe' pkgs.systemd "systemd-run"} --user --scope --slice=app.slice --quiet --collect --";
   terminal = "${appRunner} ${lib.getExe pkgs.alacritty}";
-  menu = "${lib.getExe pkgs.fuzzel} --launch-prefix='${appRunner}'";
-  fileManager = "xdg-open ${config.home.homeDirectory}";
+  fuzzel = lib.getExe pkgs.fuzzel;
+  menu = "${fuzzel} --launch-prefix='${appRunner}'";
   primaryOutput = "DP-1";
   laptopOutput = "eDP-1";
   flclashAppId = "com.follow.clash";
@@ -19,6 +18,10 @@ let
   wallpaper = "${config.home.homeDirectory}/Pictures/图片/walls/nord/a_cat_walking_on_a_hill.png";
   swaymsg = lib.getExe' pkgs.sway "swaymsg";
   wlCopy = lib.getExe' pkgs.wl-clipboard "wl-copy";
+  wlPaste = lib.getExe' pkgs.wl-clipboard "wl-paste";
+  cliphist = lib.getExe pkgs.cliphist;
+  notifySend = lib.getExe pkgs.libnotify;
+  bluetoothctl = lib.getExe' pkgs.bluez "bluetoothctl";
   powerMenu = pkgs.writeShellScriptBin "sway-power-menu" ''
     choice="$(${lib.getExe pkgs.fuzzel} --dmenu --prompt "Power: " <<'EOF'
     Lock
@@ -37,49 +40,19 @@ let
       "Power off") exec ${lib.getExe' pkgs.systemd "systemctl"} poweroff ;;
     esac
   '';
-  directionKeys = {
-    h = "left";
-    j = "down";
-    k = "up";
-    l = "right";
-    Left = "left";
-    Down = "down";
-    Up = "up";
-    Right = "right";
-  };
-  workspaces =
-    (builtins.map (n: {
-      key = builtins.toString n;
-      name = builtins.toString n;
-    }) (lib.range 1 9))
-    ++ [
-      {
-        key = "0";
-        name = "10";
-      }
-    ];
-  mkDirectionBindings =
-    prefix: command:
-    lib.mapAttrs' (
-      key: direction: lib.nameValuePair "${mod}+${prefix}${key}" "${command} ${direction}"
-    ) directionKeys;
-  mkWorkspaceBindings =
-    prefix: command:
-    lib.listToAttrs (
-      builtins.map (
-        workspace: lib.nameValuePair "${mod}+${prefix}${workspace.key}" "${command} ${workspace.name}"
-      ) workspaces
-    );
-  resizeBindings = lib.mapAttrs (
-    _key: direction:
-    {
-      left = "resize shrink width 10px";
-      down = "resize grow height 10px";
-      up = "resize shrink height 10px";
-      right = "resize grow width 10px";
-    }
-    .${direction}
-  ) directionKeys;
+  swayConfig =
+    builtins.replaceStrings
+      [
+        "@terminal@"
+        "@menu@"
+        "@home@"
+      ]
+      [
+        terminal
+        menu
+        config.home.homeDirectory
+      ]
+      (builtins.readFile ./sway/config);
   setWallpaper = pkgs.writeShellScript "set-sway-wallpaper" ''
     if [ -f "${wallpaper}" ]; then
       exec ${lib.getExe pkgs.swaybg} -i "${wallpaper}" -m fill
@@ -149,6 +122,150 @@ let
 
       ${wlCopy} < "$file"
     '';
+  clipboardMenu = pkgs.writeShellScriptBin "clipboard-menu" ''
+    set -eu
+
+    pins_dir="''${XDG_DATA_HOME:-$HOME/.local/share}/cliphist-pins"
+    menu_file="$(${pkgs.coreutils}/bin/mktemp)"
+    trap '${pkgs.coreutils}/bin/rm -f -- "$menu_file"' EXIT
+    ${pkgs.coreutils}/bin/mkdir -p "$pins_dir"
+
+    for pin in "$pins_dir"/*; do
+      [ -f "$pin" ] || continue
+      preview="$(${pkgs.coreutils}/bin/tr '\n\t' '  ' < "$pin" | ${pkgs.coreutils}/bin/cut -c1-100)"
+      ${pkgs.coreutils}/bin/printf 'P:%s\t★ %s\n' "$(${pkgs.coreutils}/bin/basename "$pin")" "$preview" >> "$menu_file"
+    done
+
+    while IFS=$'\t' read -r id preview; do
+      [ -n "$id" ] || continue
+      ${pkgs.coreutils}/bin/printf 'H:%s\t%s\n' "$id" "$preview" >> "$menu_file"
+    done < <(${cliphist} list)
+
+    selection="$(${fuzzel} --dmenu --prompt 'Clipboard: ' --with-nth=2 --accept-nth=1 --only-match < "$menu_file")" || exit 0
+
+    case "$selection" in
+      P:*)
+        pin="''${selection#P:}"
+        case "$pin" in
+          ""|*[!0-9a-f]*) exit 1 ;;
+        esac
+        ${wlCopy} < "$pins_dir/$pin"
+        ;;
+      H:*)
+        id="''${selection#H:}"
+        ${pkgs.coreutils}/bin/printf '%s' "$id" | ${cliphist} decode | ${wlCopy}
+        ;;
+    esac
+  '';
+  clipboardPin = pkgs.writeShellScriptBin "clipboard-pin" ''
+    set -eu
+
+    pins_dir="''${XDG_DATA_HOME:-$HOME/.local/share}/cliphist-pins"
+    item="$(${pkgs.coreutils}/bin/mktemp)"
+    trap '${pkgs.coreutils}/bin/rm -f -- "$item"' EXIT
+    ${pkgs.coreutils}/bin/mkdir -p "$pins_dir"
+
+    if ! ${wlPaste} --type text > "$item" || [ ! -s "$item" ]; then
+      ${notifySend} "Clipboard" "Only non-empty text can be pinned"
+      exit 1
+    fi
+
+    hash="$(${pkgs.coreutils}/bin/sha256sum "$item")"
+    hash="''${hash%% *}"
+    ${pkgs.coreutils}/bin/install -m 600 "$item" "$pins_dir/$hash"
+    ${notifySend} "Clipboard" "Pinned current text"
+  '';
+  clipboardUnpin = pkgs.writeShellScriptBin "clipboard-unpin" ''
+    set -eu
+
+    pins_dir="''${XDG_DATA_HOME:-$HOME/.local/share}/cliphist-pins"
+    menu_file="$(${pkgs.coreutils}/bin/mktemp)"
+    trap '${pkgs.coreutils}/bin/rm -f -- "$menu_file"' EXIT
+    ${pkgs.coreutils}/bin/mkdir -p "$pins_dir"
+
+    for pin in "$pins_dir"/*; do
+      [ -f "$pin" ] || continue
+      preview="$(${pkgs.coreutils}/bin/tr '\n\t' '  ' < "$pin" | ${pkgs.coreutils}/bin/cut -c1-100)"
+      ${pkgs.coreutils}/bin/printf '%s\t%s\n' "$(${pkgs.coreutils}/bin/basename "$pin")" "$preview" >> "$menu_file"
+    done
+
+    pin="$(${fuzzel} --dmenu --prompt 'Unpin: ' --with-nth=2 --accept-nth=1 --only-match < "$menu_file")" || exit 0
+    case "$pin" in
+      ""|*[!0-9a-f]*) exit 1 ;;
+    esac
+    ${pkgs.coreutils}/bin/rm -f -- "$pins_dir/$pin"
+    ${notifySend} "Clipboard" "Removed pinned text"
+  '';
+  bluetoothMenu = pkgs.writeShellScriptBin "sway-bluetooth-menu" ''
+    set -eu
+
+    menu_file="$(${pkgs.coreutils}/bin/mktemp)"
+    trap '${pkgs.coreutils}/bin/rm -f -- "$menu_file"' EXIT
+
+    if ${bluetoothctl} show | ${pkgs.gnugrep}/bin/grep -q 'Powered: yes'; then
+      ${pkgs.coreutils}/bin/printf 'power-off\t󰂲  Turn Bluetooth off\n' >> "$menu_file"
+    else
+      ${pkgs.coreutils}/bin/printf 'power-on\t󰂯  Turn Bluetooth on\n' >> "$menu_file"
+    fi
+
+    while read -r _ address name; do
+      [ -n "$address" ] || continue
+      info="$(${bluetoothctl} info "$address" 2>/dev/null || true)"
+      ${pkgs.gnugrep}/bin/grep -q 'Paired: yes' <<< "$info" || continue
+
+      if ${pkgs.gnugrep}/bin/grep -q 'Connected: yes' <<< "$info"; then
+        status="󰂱"
+      else
+        status="󰂯"
+      fi
+      ${pkgs.coreutils}/bin/printf 'device:%s\t%s  %s\n' "$address" "$status" "$name" >> "$menu_file"
+    done < <(${bluetoothctl} devices)
+
+    ${pkgs.coreutils}/bin/printf 'advanced\t󰒓  Device settings…\n' >> "$menu_file"
+    selection="$(${fuzzel} --dmenu --prompt 'Bluetooth: ' --with-nth=2 --accept-nth=1 --only-match < "$menu_file")" || exit 0
+
+    case "$selection" in
+      power-on) ${bluetoothctl} power on ;;
+      power-off) ${bluetoothctl} power off ;;
+      advanced) exec ${lib.getExe' pkgs.blueman "blueman-manager"} ;;
+      device:*)
+        address="''${selection#device:}"
+        if ${bluetoothctl} info "$address" | ${pkgs.gnugrep}/bin/grep -q 'Connected: yes'; then
+          ${bluetoothctl} disconnect "$address"
+        else
+          ${bluetoothctl} connect "$address"
+        fi
+        ;;
+    esac
+  '';
+  swayOsd = pkgs.writeShellScriptBin "sway-osd" ''
+    set -eu
+
+    case "''${1:-}" in
+      volume-up) ${lib.getExe' pkgs.wireplumber "wpctl"} set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+ ;;
+      volume-down) ${lib.getExe' pkgs.wireplumber "wpctl"} set-volume @DEFAULT_AUDIO_SINK@ 5%- ;;
+      volume-mute) ${lib.getExe' pkgs.wireplumber "wpctl"} set-mute @DEFAULT_AUDIO_SINK@ toggle ;;
+      brightness-up) ${lib.getExe pkgs.brightnessctl} set 5%+ ;;
+      brightness-down) ${lib.getExe pkgs.brightnessctl} set 5%- ;;
+      *) exit 2 ;;
+    esac
+
+    case "$1" in
+      volume-*)
+        ${lib.getExe' pkgs.wireplumber "wpctl"} get-volume @DEFAULT_AUDIO_SINK@ \
+          | ${pkgs.gawk}/bin/awk '{ if ($0 ~ /MUTED/) print "0 muted"; else printf "%.0f\n", $2 * 100 }' \
+          > "''${XDG_RUNTIME_DIR}/wob.sock"
+        ;;
+      brightness-*)
+        ${lib.getExe pkgs.brightnessctl} -m \
+          | ${pkgs.gawk}/bin/awk -F, '{ sub(/%/, "", $4); print $4 }' \
+          > "''${XDG_RUNTIME_DIR}/wob.sock"
+        ;;
+    esac
+  '';
+  cliphistWatch = pkgs.writeShellScript "cliphist-watch" ''
+    exec ${wlPaste} --watch ${cliphist} store
+  '';
 in
 {
   options.myHome.desktop.sway.enable = lib.mkEnableOption "Sway compositor user configuration";
@@ -156,12 +273,18 @@ in
   config = lib.mkIf cfg.enable {
     home.packages = with pkgs; [
       closeWindow
+      bluetoothMenu
       blueman
+      clipboardMenu
+      clipboardPin
+      clipboardUnpin
+      pkgs.cliphist
       flclashGui
-      fuzzel
+      pkgs.fuzzel
       jq
       libnotify
       networkmanagerapplet
+      networkmanager_dmenu
       pavucontrol
       polkit_gnome
       powerMenu
@@ -170,6 +293,8 @@ in
       (screenshot "screen")
       (screenshot "window")
       swaybg
+      swayOsd
+      wob
       wdisplays
       xdg-utils
     ];
@@ -227,13 +352,44 @@ in
       tray = "auto";
     };
 
-    services.network-manager-applet.enable = true;
-    services.blueman-applet = {
-      enable = true;
-      systemdTargets = [ "sway-session.target" ];
-    };
-
     xsession.preferStatusNotifierItems = true;
+
+    xdg.configFile."networkmanager-dmenu/config.ini".text = ''
+      [dmenu]
+      dmenu_command = ${fuzzel}
+      active_chars = ●
+      compact = True
+      wifi_chars = ▂▄▆█
+      format = {name}  {sec}  {bars}
+      list_saved = False
+      prompt = Network
+
+      [editor]
+      gui_if_available = True
+      gui = nm-connection-editor
+
+      [nmdm]
+      rescan_delay = 3
+      show_notifications = True
+    '';
+
+    xdg.configFile."wob/wob.ini".text = ''
+      timeout = 900
+      max = 100
+      width = 320
+      height = 24
+      border_size = 2
+      bar_padding = 3
+      anchor = bottom center
+      margin = 64
+      border_color = 7fc8ffff
+      background_color = 111318e6
+      bar_color = 7fc8ffff
+
+      [style.muted]
+      border_color = ff7f7fff
+      bar_color = ff7f7fff
+    '';
 
     # Prefer the external monitor when it is connected. When DP-1 disappears,
     # Kanshi restores the laptop panel automatically.
@@ -356,20 +512,22 @@ in
         };
         network = {
           interval = 10;
-          format-wifi = "W {signalStrength}%";
-          format-ethernet = "E";
-          format-disconnected = "N/A";
+          format-wifi = "󰤨 {signalStrength}%";
+          format-ethernet = "󰈀";
+          format-disconnected = "󰤭";
           tooltip-format = "{ifname}: {ipaddr}/{cidr}";
-          on-click = "nm-connection-editor";
+          on-click = "networkmanager_dmenu";
+          on-click-right = "nm-connection-editor";
         };
         bluetooth = {
-          format = "B";
-          format-disabled = "B off";
-          format-connected = "B {num_connections}";
+          format = "󰂯";
+          format-disabled = "󰂲";
+          format-connected = "󰂱 {num_connections}";
           tooltip-format = "{controller_alias}\t{controller_address}";
           tooltip-format-connected = "{device_enumerate}";
           tooltip-format-enumerate-connected = "{device_alias}\t{device_address}";
-          on-click = "blueman-manager";
+          on-click = "sway-bluetooth-menu";
+          on-click-right = "blueman-manager";
         };
         pulseaudio = {
           format = "V {volume}%";
@@ -540,14 +698,45 @@ in
       Install.WantedBy = [ "sway-session.target" ];
     };
 
-    systemd.user.services.network-manager-applet.Service = {
-      Restart = "on-failure";
-      RestartSec = 2;
+    systemd.user.services.cliphist = {
+      Unit = {
+        Description = "Wayland clipboard history";
+        After = [ "sway-session.target" ];
+        PartOf = [ "sway-session.target" ];
+      };
+      Service = {
+        ExecStart = "${cliphistWatch}";
+        Restart = "on-failure";
+        RestartSec = 2;
+      };
+      Install.WantedBy = [ "sway-session.target" ];
     };
 
-    systemd.user.services.blueman-applet.Service = {
-      Restart = "on-failure";
-      RestartSec = 2;
+    systemd.user.sockets.wob = {
+      Unit = {
+        Description = "Wob overlay socket";
+        PartOf = [ "sway-session.target" ];
+      };
+      Socket = {
+        ListenFIFO = "%t/wob.sock";
+        SocketMode = "0600";
+        RemoveOnStop = true;
+        FlushPending = true;
+      };
+      Install.WantedBy = [ "sway-session.target" ];
+    };
+
+    systemd.user.services.wob = {
+      Unit = {
+        Description = "Wayland overlay bar";
+        After = [ "sway-session.target" ];
+        PartOf = [ "sway-session.target" ];
+      };
+      Service = {
+        ExecStart = lib.getExe pkgs.wob;
+        StandardInput = "socket";
+        StandardOutput = "journal";
+      };
     };
 
     systemd.user.services.udiskie.Service = {
@@ -587,162 +776,10 @@ in
       wrapperFeatures.gtk = true;
       xwayland = true;
 
-      config = {
-        modifier = mod;
-        terminal = terminal;
-        menu = menu;
-        # 不留窗口间距：平铺窗口直接吃满可用区域，只保留顶部状态栏占用的空间。
-        gaps = {
-          inner = 0;
-          outer = 0;
-        };
-        fonts = {
-          names = [ "Maple Mono NF CN" ];
-          size = 10.0;
-        };
-
-        input = {
-          "type:keyboard" = {
-            xkb_layout = "us";
-            xkb_options = "ctrl:nocaps";
-          };
-          "type:touchpad" = {
-            tap = "enabled";
-            natural_scroll = "enabled";
-            events = "disabled_on_external_mouse";
-          };
-        };
-
-        output = {
-          # 主显示器：24 寸 2560x1440，放在全局坐标原点，也就是左侧。
-          ${primaryOutput} = {
-            mode = "2560x1440@165Hz";
-            scale = "1.25";
-            position = "0 0";
-          };
-          # 笔记本内屏：使用原生 16:10 模式。Kanshi 会在外屏连接时将其关闭。
-          ${laptopOutput} = {
-            mode = "2560x1600@120Hz";
-            scale = "1.60";
-            position = "0 0";
-          };
-        };
-
-        # 关闭 Sway 内置 swaybar，改由 Waybar 提供顶部状态栏。
-        bars = [ ];
-
-        window = {
-          border = 0;
-          titlebar = false;
-        };
-
-        floating = {
-          border = 2;
-          modifier = mod;
-          titlebar = true;
-        };
-
-        colors = {
-          focused = {
-            border = "#7fc8ff";
-            background = "#111318";
-            text = "#e6edf3";
-            indicator = "#7fc8ff";
-            childBorder = "#7fc8ff";
-          };
-          unfocused = {
-            border = "#30363d";
-            background = "#111318";
-            text = "#8b949e";
-            indicator = "#30363d";
-            childBorder = "#30363d";
-          };
-        };
-
-        # Kanshi 切换输出时由 Sway 自动迁移工作区，避免工作区绑定到已禁用的显示器。
-        defaultWorkspace = "workspace number 1";
-
-        keybindings = {
-          "${mod}+Tab" = "workspace next";
-          "${mod}+Shift+Tab" = "workspace prev";
-
-          "${mod}+Return" = "exec ${terminal}";
-          "${mod}+d" = "exec ${menu}";
-          "${mod}+Shift+f" = "exec ${fileManager}";
-          "${mod}+Shift+q" = "exec close-sway-window";
-          "${mod}+Shift+c" = "reload";
-          "${mod}+Shift+e" =
-            "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -B 'Yes, exit sway' 'swaymsg exit'";
-
-          "${mod}+b" = "splith";
-          "${mod}+v" = "splitv";
-          "${mod}+s" = "layout stacking";
-          "${mod}+w" = "layout tabbed";
-          "${mod}+e" = "layout toggle split";
-          "${mod}+f" = "fullscreen";
-          "${mod}+Shift+space" = "floating toggle";
-          "${mod}+space" = "focus mode_toggle";
-          "${mod}+a" = "focus parent";
-
-          "${mod}+Shift+minus" = "move scratchpad";
-          "${mod}+minus" = "scratchpad show";
-          "${mod}+r" = "mode resize";
-
-          "${mod}+Alt+l" = "exec lock-screen";
-          "${mod}+Shift+a" = "exec pavucontrol";
-          "${mod}+Shift+b" = "exec blueman-manager";
-          "${mod}+Shift+d" = "exec wdisplays";
-          "${mod}+Shift+n" = "exec nm-connection-editor";
-          "${mod}+Escape" = "exec sway-power-menu";
-          "${mod}+n" = "exec makoctl dismiss";
-          "${mod}+Ctrl+n" = "exec makoctl dismiss --all";
-
-          "--locked XF86AudioMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
-          "--locked XF86AudioLowerVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-";
-          "--locked XF86AudioRaiseVolume" = "exec wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+";
-          "--locked XF86AudioMicMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle";
-          "--locked XF86AudioPlay" = "exec playerctl play-pause";
-          "--locked XF86AudioPause" = "exec playerctl play-pause";
-          "--locked XF86AudioPrev" = "exec playerctl previous";
-          "--locked XF86AudioNext" = "exec playerctl next";
-          "--locked XF86AudioStop" = "exec playerctl stop";
-          "--locked XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
-          "--locked XF86MonBrightnessUp" = "exec brightnessctl set 5%+";
-          # 参照 Niri：Ctrl+Shift+Mod+4 区域截图，Alt+Ctrl+Shift+Mod+4 全屏截图。
-          "Ctrl+Shift+${mod}+4" = "exec screenshot-area";
-          "Alt+Ctrl+Shift+${mod}+4" = "exec screenshot-screen";
-          "Print" = "exec screenshot-screen";
-          "Shift+Print" = "exec screenshot-edit";
-          "Ctrl+Print" = "exec screenshot-window";
-        }
-        // mkDirectionBindings "" "focus"
-        // mkDirectionBindings "Shift+" "move"
-        // mkWorkspaceBindings "" "workspace number"
-        // mkWorkspaceBindings "Shift+" "move container to workspace number";
-
-        modes.resize = resizeBindings // {
-          Return = "mode default";
-          Escape = "mode default";
-        };
-      };
-
-      extraConfig = ''
-        workspace_auto_back_and_forth yes
-        focus_on_window_activation smart
-        popup_during_fullscreen smart
-        mouse_warping output
-
-        for_window [app_id="firefox" title="^Picture-in-Picture$"] floating enable, sticky enable
-        for_window [app_id="^(pavucontrol|org.pulseaudio.pavucontrol|nm-connection-editor|blueman-manager|wdisplays|swappy)$"] floating enable, resize set 900 650, move position center
-        for_window [window_role="pop-up"] floating enable
-        for_window [window_role="bubble"] floating enable
-        for_window [window_role="dialog"] floating enable
-        for_window [window_type="dialog"] floating enable
-        for_window [window_type="utility"] floating enable
-        for_window [window_type="toolbar"] floating enable
-        for_window [app_id=".*"] inhibit_idle fullscreen
-        for_window [class=".*"] inhibit_idle fullscreen
-      '';
+      # Keep the native Sway configuration in a searchable standalone file,
+      # while Home Manager still validates and installs it.
+      config = null;
+      extraConfigEarly = swayConfig;
     };
   };
 }

@@ -5,7 +5,7 @@ let
 in
 {
   options.mySystem.core.nixGc.enable =
-    lib.mkEnableOption "weekly Nix garbage collection keeping the latest 10 NixOS generations";
+    lib.mkEnableOption "weekly Nix garbage collection keeping the latest 15 NixOS generations";
 
   config = lib.mkIf cfg.enable {
     # The built-in nix.gc options only support age-based retention. Prune the
@@ -20,7 +20,7 @@ in
       script = ''
         ${config.nix.package}/bin/nix-env \
           --profile /nix/var/nix/profiles/system \
-          --delete-generations +10
+          --delete-generations +15
         ${config.nix.package}/bin/nix-collect-garbage
       '';
     };
