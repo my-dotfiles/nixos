@@ -1,0 +1,195 @@
+# Sway configuration managed by Home Manager.
+# Edit this file in the NixOS configuration repository, then rebuild the system.
+
+### Variables
+
+set $mod Mod4
+set $terminal @terminal@
+set $menu @menu@
+set $file_manager xdg-open @home@
+
+### Appearance and window behavior
+
+font pango:Maple Mono NF CN 10
+floating_modifier $mod
+
+default_border pixel 0
+default_floating_border normal 2
+hide_edge_borders none
+
+gaps inner 0
+gaps outer 0
+
+focus_wrapping no
+focus_follows_mouse no
+focus_on_window_activation smart
+mouse_warping output
+popup_during_fullscreen smart
+workspace_layout default
+workspace_auto_back_and_forth yes
+
+client.focused #7fc8ff #111318 #e6edf3 #7fc8ff #7fc8ff
+client.focused_inactive #333333 #5f676a #ffffff #484e50 #5f676a
+client.unfocused #30363d #111318 #8b949e #30363d #30363d
+client.urgent #2f343a #900000 #ffffff #900000 #900000
+client.placeholder #000000 #0c0c0c #ffffff #000000 #0c0c0c
+client.background #ffffff
+
+### Input
+
+input "type:keyboard" {
+    xkb_layout us
+    xkb_options ctrl:nocaps
+}
+
+input "type:touchpad" {
+    tap enabled
+    natural_scroll enabled
+    events disabled_on_external_mouse
+}
+
+### Outputs
+
+# External 24-inch 2560x1440 display. Kanshi disables the laptop panel when
+# this output is connected.
+output "DP-1" {
+    mode 2560x1440@165Hz
+    position 0 0
+    scale 1.25
+}
+
+output "eDP-1" {
+    mode 2560x1600@120Hz
+    position 0 0
+    scale 1.60
+}
+
+### Applications and session
+
+bindsym $mod+Return exec $terminal
+bindsym $mod+d exec $menu
+bindsym $mod+f exec $file_manager
+bindsym $mod+Shift+q exec close-sway-window
+bindsym $mod+Shift+c reload
+bindsym $mod+Shift+e exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -B 'Yes, exit sway' 'swaymsg exit'
+
+bindsym $mod+Alt+l exec lock-screen
+bindsym $mod+Shift+a exec pavucontrol
+bindsym $mod+Shift+b exec sway-bluetooth-menu
+bindsym $mod+Shift+d exec wdisplays
+bindsym $mod+Shift+n exec networkmanager_dmenu
+bindsym $mod+Escape exec sway-power-menu
+bindsym $mod+n exec makoctl dismiss
+bindsym $mod+Ctrl+n exec makoctl dismiss --all
+bindsym $mod+c exec clipboard-menu
+bindsym $mod+Ctrl+c exec clipboard-pin
+bindsym $mod+Ctrl+Shift+c exec clipboard-unpin
+
+### Window navigation and layout
+
+bindsym $mod+h focus left
+bindsym $mod+j focus down
+bindsym $mod+k focus up
+bindsym $mod+l focus right
+bindsym $mod+Left focus left
+bindsym $mod+Down focus down
+bindsym $mod+Up focus up
+bindsym $mod+Right focus right
+
+bindsym $mod+Shift+h move left
+bindsym $mod+Shift+j move down
+bindsym $mod+Shift+k move up
+bindsym $mod+Shift+l move right
+bindsym $mod+Shift+Left move left
+bindsym $mod+Shift+Down move down
+bindsym $mod+Shift+Up move up
+bindsym $mod+Shift+Right move right
+
+bindsym $mod+b splith
+bindsym $mod+v splitv
+bindsym $mod+s layout stacking
+bindsym $mod+w layout tabbed
+bindsym $mod+e layout toggle split
+bindsym $mod+Shift+f fullscreen
+bindsym $mod+Shift+space floating toggle
+bindsym $mod+space focus mode_toggle
+bindsym $mod+a focus parent
+bindsym $mod+u [urgent=latest] focus
+
+bindsym $mod+Shift+minus move scratchpad
+bindsym $mod+minus scratchpad show
+bindsym $mod+r mode resize
+
+mode "resize" {
+    bindsym h resize shrink width 10px
+    bindsym j resize grow height 10px
+    bindsym k resize shrink height 10px
+    bindsym l resize grow width 10px
+    bindsym Left resize shrink width 10px
+    bindsym Down resize grow height 10px
+    bindsym Up resize shrink height 10px
+    bindsym Right resize grow width 10px
+    bindsym Return mode default
+    bindsym Escape mode default
+}
+
+### Workspaces
+
+bindsym $mod+Tab workspace next
+bindsym $mod+Shift+Tab workspace prev
+
+bindsym $mod+1 workspace number 1
+bindsym $mod+2 workspace number 2
+bindsym $mod+3 workspace number 3
+bindsym $mod+4 workspace number 4
+bindsym $mod+5 workspace number 5
+bindsym $mod+6 workspace number 6
+bindsym $mod+7 workspace number 7
+bindsym $mod+8 workspace number 8
+bindsym $mod+9 workspace number 9
+bindsym $mod+0 workspace number 10
+
+bindsym $mod+Shift+1 move container to workspace number 1
+bindsym $mod+Shift+2 move container to workspace number 2
+bindsym $mod+Shift+3 move container to workspace number 3
+bindsym $mod+Shift+4 move container to workspace number 4
+bindsym $mod+Shift+5 move container to workspace number 5
+bindsym $mod+Shift+6 move container to workspace number 6
+bindsym $mod+Shift+7 move container to workspace number 7
+bindsym $mod+Shift+8 move container to workspace number 8
+bindsym $mod+Shift+9 move container to workspace number 9
+bindsym $mod+Shift+0 move container to workspace number 10
+
+### Media, brightness, and screenshots
+
+bindsym --locked XF86AudioMute exec sway-osd volume-mute
+bindsym --locked XF86AudioLowerVolume exec sway-osd volume-down
+bindsym --locked XF86AudioRaiseVolume exec sway-osd volume-up
+bindsym --locked XF86AudioMicMute exec wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
+bindsym --locked XF86AudioPlay exec playerctl play-pause
+bindsym --locked XF86AudioPause exec playerctl play-pause
+bindsym --locked XF86AudioPrev exec playerctl previous
+bindsym --locked XF86AudioNext exec playerctl next
+bindsym --locked XF86AudioStop exec playerctl stop
+bindsym --locked XF86MonBrightnessDown exec sway-osd brightness-down
+bindsym --locked XF86MonBrightnessUp exec sway-osd brightness-up
+
+# Match the Niri screenshot shortcuts.
+bindsym Ctrl+Shift+$mod+4 exec screenshot-area
+bindsym Alt+Ctrl+Shift+$mod+4 exec screenshot-screen
+bindsym Print exec screenshot-screen
+bindsym Shift+Print exec screenshot-edit
+bindsym Ctrl+Print exec screenshot-window
+
+### Window rules
+
+for_window [app_id="firefox" title="^Picture-in-Picture$"] floating enable, sticky enable
+for_window [app_id="^(pavucontrol|org.pulseaudio.pavucontrol|nm-connection-editor|blueman-manager|wdisplays|swappy)$"] floating enable, resize set 900 650, move position center
+for_window [window_role="pop-up"] floating enable
+for_window [window_role="bubble"] floating enable
+for_window [window_role="dialog"] floating enable
+for_window [window_type="dialog"] floating enable
+for_window [window_type="utility"] floating enable
+for_window [window_type="toolbar"] floating enable
+for_window [app_id=".*"] inhibit_idle fullscreen
+for_window [class=".*"] inhibit_idle fullscreen
