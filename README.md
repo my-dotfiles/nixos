@@ -16,7 +16,7 @@
 
 ## 架构图
 
-![ALt](./architecture.png)
+![配置架构](./architecture.png)
 
 ## 配置入口
 
@@ -48,10 +48,15 @@ modules/
   home/
     core/            XDG、shell/session、稳定的用户默认行为。
     cli/             终端工具和命令行工作流。
-    desktop/         GUI 应用、字体、MIME、fcitx5、Sway/Waybar 配置。
-    development/     编辑器和全局开发工具。
-    secrets/         本地 secret 文件接入；不存放 secret 明文。
+    desktop/         GUI 应用、字体、MIME、fcitx5 和桌面会话配置。
+      sway/config    原生 Sway 配置，由 Home Manager 安装。
+    development/     Emacs、Codex、Pi 和全局开发工具。
+      emacs/         原生 Emacs init.el 与 early-init.el。
+    secrets/         sops-nix 与本地 secret hook；不存放 secret 明文。
     profiles/        Home Manager 模块组合。
+
+secrets/
+  user.yaml          sops 加密后的用户 secret。
 ```
 
 ## 常用命令
@@ -74,8 +79,8 @@ nix flake check --no-build path:/home/yurikon/nixos-config
 nixfmt flake.nix home.nix configuration.nix hosts/**/*.nix modules/**/*.nix
 ```
 
-这里使用 `path:` 是有意的。当前工作区里有不少新文件还没有加入 Git，普通
-`nix flake check` 会使用 Git 视角，可能看不到未跟踪文件。
+这里使用 `path:` 是有意的。工作区存在尚未加入 Git 的新模块或配置文件时，普通
+Git-backed flake 会使用 Git 视角，可能看不到未跟踪文件。
 
 ## 系统配置
 
@@ -118,6 +123,14 @@ Home Manager 的结构化选项，例如 `programs.*`、`services.*`、`xdg.conf
 当前全局编辑器是 Emacs。项目专属的 LSP、编译器、SDK、formatter 应优先放到项目
 自己的 `flake.nix` 或 `devShell` 中。全局只保留通用的 Nix 和 shell 维护工具。
 
+Emacs 采用“管理模块 + 原生配置文件”的结构：
+
+```text
+modules/home/development/emacs.nix         软件包、服务和 Home Manager 接入。
+modules/home/development/emacs/init.el     Emacs 主配置。
+modules/home/development/emacs/early-init.el
+```
+
 ## 桌面环境
 
 目标桌面是 Sway。当前取舍是：使用 Sway 时放弃 Noctalia，保留简洁、高效、可扩展、
@@ -132,30 +145,39 @@ modules/system/desktop/sway.nix
 
 这里负责启用 Sway、greetd 登录入口、常用 Wayland 工具、power/bluetooth 相关服务。
 
-Sway 的用户级配置位于：
+Sway 的用户级配置也采用与 Emacs 相同的“管理模块 + 原生配置文件”结构：
 
 ```text
-modules/home/desktop/sway.nix
+modules/home/desktop/sway.nix     软件包、脚本、Waybar、Kanshi、Mako 和 systemd 用户服务。
+modules/home/desktop/sway/config  输入、输出、窗口行为、快捷键、工作区和窗口规则。
+modules/home/desktop/lockscreen.nix
 ```
 
-用户级配置集中管理输入、输出、快捷键、启动项、截图、锁屏、通知和 Waybar。Sway
-内置 `swaybar` 已关闭，当前使用 Home Manager 的 `programs.waybar` 提供底部状态栏。
+`sway/config` 使用原生 Sway 语法，Home Manager 在构建时注入终端、启动器和 home
+目录的 Nix 路径，校验后安装为 `~/.config/sway/config`。因此日常整理 Sway 行为时
+应编辑仓库内的文件，不要直接修改 Home Manager 生成的目标文件。
+
+Sway 内置 `swaybar` 已关闭，当前使用 Home Manager 的 `programs.waybar`。Mako
+负责通知，Fuzzel 负责应用启动与电源菜单，Kanshi 负责输出切换，Workstyle 负责按
+窗口内容重命名 workspace。
 
 当前显示器布局：
 
-- `DP-1` 是主显示器，24 寸，`2560x1440@165.001Hz`，`scale = 1.25`，位置 `0 0`。
-- `eDP-1` 是笔记本内屏，`1920x1080@120.030Hz`，`scale = 1.5`，位于主屏右侧，位置 `2048 0`。
-- workspace `1` 到 `5` 固定到 `DP-1`，workspace `6` 到 `10` 固定到 `eDP-1`。
-- 启动默认进入 workspace `1`。
+- docked profile：启用 `DP-1`，使用 `2560x1440@165Hz`、`scale = 1.25`、位置
+  `0 0`，并关闭 `eDP-1`。
+- mobile profile：外屏不存在时启用 `eDP-1`，使用 `2560x1600@120Hz`、
+  `scale = 1.6`、位置 `0 0`。
+- workspace 不再固定到特定输出；Kanshi 切换输出时由 Sway 自动迁移，避免留在已关闭
+  的显示器上。
 
 窗口策略保持极简：平铺窗口没有 gaps，也没有边框；单窗口占满可用区域。浮动窗口保留
 边框，方便识别。
 
-Waybar 位于主屏底部，只显示一条极简状态栏：
+Waybar 位于屏幕顶部，高度为 24 像素：
 
 - 左侧：workspace 和当前 mode。
-- 中间：留空。
-- 右侧：tray、网络、音量、时间。
+- 中间：当前窗口标题。
+- 右侧：空闲抑制、tray、网络、蓝牙、音量、内存、电池、时间和电源菜单。
 
 workspace 显示由 Workstyle 优化。Workstyle 会监听 Sway 窗口变化并重命名 workspace，
 用短字符表示当前 workspace 里的应用，例如终端 `T`、浏览器 `W`、编辑器 `E`、
@@ -164,6 +186,9 @@ FLClash `C`、Steam `S`。Waybar 直接显示 Workstyle 生成的 workspace 名�
 FLClash、Steam 等托盘程序优先通过 Waybar 的 `tray` 模块承载。为避免 FLClash
 单实例进程在窗口被杀后无法重新打开 GUI，`Mod+Shift+q` 不再直接 kill FLClash
 窗口，而是把它移动到 scratchpad；`flclash.desktop` 被覆盖为调用 `flclash-gui`。
+
+锁屏由独立的 Home Manager 模块管理：空闲 5 分钟启动 `swaylock-effects`，10 分钟
+关闭输出，恢复活动时重新打开输出；系统休眠前也会先锁屏。
 
 截图快捷键：
 
@@ -192,16 +217,22 @@ session。
 
 ## Secrets
 
-`modules/home/secrets` 只描述本地 secret 文件如何被 source，不存放 secret 明文。
+`modules/home/secrets` 只描述 secret 的解密和加载方式，不存放 secret 明文。加密后的
+数据保存在 `secrets/user.yaml`，由 sops-nix 使用本机 age key 解密；age 私钥位于：
 
-当前本地 hook 会查找：
+```text
+~/.config/sops/age/keys.txt
+```
+
+Home Manager 会生成 shell hook：
 
 ```text
 ~/.config/secrets/api-keys.bash
 ~/.config/secrets/api-keys.fish
 ```
 
-这些文件属于本机状态，应留在 Git 外。
+这些 hook 只引用 sops-nix 在运行时生成的 secret 路径。age 私钥、解密后的内容和任何
+临时明文都属于本机状态，必须留在 Git 外；仓库中只允许提交 sops 加密文件。
 
 ## 备注
 

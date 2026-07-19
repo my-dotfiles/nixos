@@ -301,8 +301,8 @@
       global-corfu-minibuffer nil)
 (global-corfu-mode 1)
 (setq corfu-auto t
-      corfu-auto-delay 0.2
-      corfu-auto-prefix 2
+      corfu-auto-delay 0.1
+      corfu-auto-prefix 1
       corfu-cycle t
       corfu-preselect 'prompt)
 
