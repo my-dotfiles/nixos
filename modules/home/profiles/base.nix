@@ -12,6 +12,7 @@
     ../cli/ssh.nix
     ../cli/terminal.nix
     ../cli/alacritty.nix
+    ../cli/btop.nix
     ../cli/ghostty.nix
     ../cli/htop.nix
     ../cli/lazygit.nix
@@ -21,7 +22,6 @@
     ../cli/zellij.nix
     ../development/editor.nix
     ../development/emacs.nix
-    ../development/zed.nix
     ../development/tools.nix
     ../development/codex.nix
     ../development/pi.nix

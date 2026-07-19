@@ -14,10 +14,15 @@ in
   config = lib.mkIf cfg.enable {
     boot = {
       loader = {
-        systemd-boot.enable = true;
+        systemd-boot = {
+          enable = true;
+          configurationLimit = 10;
+        };
         efi.canTouchEfiVariables = true;
       };
-      kernelPackages = pkgs.linuxPackages_latest;
+      # Prefer the nixpkgs default kernel over the newest release line. This
+      # reduces kernel/NVIDIA regressions on a long-lived workstation.
+      kernelPackages = pkgs.linuxPackages;
     };
   };
 }

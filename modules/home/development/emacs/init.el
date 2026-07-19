@@ -16,6 +16,9 @@
       read-process-output-max (* 1024 1024))
 
 ;; 这些变量进入主模式后会变成缓冲区局部变量，因此应设置默认值，
+;; 而不是只修改启动缓冲区中的值。
+(setq-default indent-tabs-mode nil
+              tab-width 2
               fill-column 100
               truncate-lines t)
 

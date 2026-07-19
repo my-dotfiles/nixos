@@ -27,6 +27,7 @@ let
     done
 
     swaylock_args=(
+      --daemonize
       --ignore-empty-password
       --show-failed-attempts
       --font "Maple Mono NF CN"
@@ -74,8 +75,7 @@ in
     wallpapers = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [
-        "${config.home.homeDirectory}/Pictures/图片/walls/centered/a_cat_sitting_next_to_a_computer.jpg"
-        "${config.home.homeDirectory}/Pictures/图片/walls/anime/a_cartoon_of_a_cat_playing_with_a_ball.png"
+        "${config.home.homeDirectory}/Pictures/图片/walls/nord/a_blue_and_grey_logo.png"
       ];
       description = "Wallpaper candidates for the lock screen. Missing files are ignored.";
     };
@@ -95,8 +95,11 @@ in
       };
 
       Service = {
-        Type = "exec";
+        # swaylock --daemonize only returns after the lock surface is ready, so
+        # before-sleep cannot race ahead of the screen lock.
+        Type = "forking";
         ExecStart = "${runLockScreen}";
+        TimeoutStartSec = 15;
       };
     };
 

@@ -8,6 +8,7 @@
     ../core/nix.nix
     ../core/nix-gc.nix
     ../core/packages.nix
+    ../core/swap.nix
     ../core/users.nix
     ../desktop/thunar.nix
     ../services/jellyfin.nix
@@ -17,6 +18,7 @@
     ../services/pipewire.nix
     ../services/printing.nix
     ../services/proxy.nix
+    ../services/scanning.nix
     ../services/tailscale.nix
     ../services/usbmuxd.nix
   ];

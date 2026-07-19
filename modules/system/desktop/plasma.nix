@@ -36,15 +36,9 @@ in
       gvfs.enable = true;
       udisks2.enable = true;
 
-      avahi = {
-        enable = true;
-        nssmdns4 = true;
-        openFirewall = true;
-      };
     };
 
     hardware.bluetooth.enable = true;
-    hardware.sane.enable = true;
 
     programs.kdeconnect.enable = true;
     programs.kde-pim = {

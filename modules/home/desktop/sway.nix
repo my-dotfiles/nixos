@@ -8,16 +8,35 @@
 let
   cfg = config.myHome.desktop.sway;
   mod = "Mod4";
-  terminal = "alacritty";
-  menu = "fuzzel";
+  appRunner = "${lib.getExe' pkgs.systemd "systemd-run"} --user --scope --slice=app.slice --quiet --collect --";
+  terminal = "${appRunner} ${lib.getExe pkgs.alacritty}";
+  menu = "${lib.getExe pkgs.fuzzel} --launch-prefix='${appRunner}'";
   fileManager = "xdg-open ${config.home.homeDirectory}";
   primaryOutput = "DP-1";
   laptopOutput = "eDP-1";
   flclashAppId = "com.follow.clash";
   screenshotDir = "${config.home.homeDirectory}/Pictures/Screenshots";
-  wallpaper = "${config.home.homeDirectory}/Pictures/图片/walls/centered/a_cat_sitting_next_to_a_computer.jpg";
+  wallpaper = "${config.home.homeDirectory}/Pictures/图片/walls/nord/a_cat_walking_on_a_hill.png";
   swaymsg = lib.getExe' pkgs.sway "swaymsg";
   wlCopy = lib.getExe' pkgs.wl-clipboard "wl-copy";
+  powerMenu = pkgs.writeShellScriptBin "sway-power-menu" ''
+    choice="$(${lib.getExe pkgs.fuzzel} --dmenu --prompt "Power: " <<'EOF'
+    Lock
+    Suspend
+    Log out
+    Reboot
+    Power off
+    EOF
+    )" || exit 0
+
+    case "$choice" in
+      Lock) exec lock-screen ;;
+      Suspend) exec ${lib.getExe' pkgs.systemd "systemctl"} suspend ;;
+      "Log out") exec ${swaymsg} exit ;;
+      Reboot) exec ${lib.getExe' pkgs.systemd "systemctl"} reboot ;;
+      "Power off") exec ${lib.getExe' pkgs.systemd "systemctl"} poweroff ;;
+    esac
+  '';
   directionKeys = {
     h = "left";
     j = "down";
@@ -39,17 +58,6 @@ let
         name = "10";
       }
     ];
-  workspaceOutputAssign =
-    (builtins.map (workspace: {
-      inherit (workspace) name;
-      workspace = workspace.name;
-      output = primaryOutput;
-    }) (builtins.filter (workspace: lib.toInt workspace.name <= 5) workspaces))
-    ++ (builtins.map (workspace: {
-      inherit (workspace) name;
-      workspace = workspace.name;
-      output = laptopOutput;
-    }) (builtins.filter (workspace: lib.toInt workspace.name > 5) workspaces));
   mkDirectionBindings =
     prefix: command:
     lib.mapAttrs' (
@@ -155,6 +163,8 @@ in
       libnotify
       networkmanagerapplet
       pavucontrol
+      polkit_gnome
+      powerMenu
       (screenshot "area")
       (screenshot "edit")
       (screenshot "screen")
@@ -178,8 +188,10 @@ in
 
     services.mako = {
       enable = true;
-      package = null;
+      package = pkgs.mako;
       settings = {
+        anchor = "top-right";
+        layer = "overlay";
         font = "Sans 10";
         width = 420;
         height = 160;
@@ -192,7 +204,76 @@ in
         border-color = "#7fc8ffff";
         progress-color = "over #7fc8ff66";
         default-timeout = 6000;
+        ignore-timeout = false;
+        icons = true;
+        markup = true;
+        actions = true;
+        max-visible = 5;
+        sort = "-time";
+        on-button-left = "dismiss";
+        on-button-right = "dismiss-all";
+        "urgency=high" = {
+          border-color = "#ff7f7fff";
+          default-timeout = 0;
+          ignore-timeout = true;
+        };
       };
+    };
+
+    services.udiskie = {
+      enable = true;
+      automount = true;
+      notify = true;
+      tray = "auto";
+    };
+
+    services.network-manager-applet.enable = true;
+    services.blueman-applet = {
+      enable = true;
+      systemdTargets = [ "sway-session.target" ];
+    };
+
+    xsession.preferStatusNotifierItems = true;
+
+    # Prefer the external monitor when it is connected. When DP-1 disappears,
+    # Kanshi restores the laptop panel automatically.
+    services.kanshi = {
+      enable = true;
+      systemdTarget = "sway-session.target";
+      settings = [
+        {
+          profile = {
+            name = "docked";
+            outputs = [
+              {
+                criteria = primaryOutput;
+                status = "enable";
+                mode = "2560x1440@165Hz";
+                position = "0,0";
+                scale = 1.25;
+              }
+              {
+                criteria = laptopOutput;
+                status = "disable";
+              }
+            ];
+          };
+        }
+        {
+          profile = {
+            name = "mobile";
+            outputs = [
+              {
+                criteria = laptopOutput;
+                status = "enable";
+                mode = "2560x1600@120Hz";
+                position = "0,0";
+                scale = 1.6;
+              }
+            ];
+          };
+        }
+      ];
     };
 
     # 使用 Waybar 替代 swaybar。Waybar 的 tray 模块更接近传统桌面托盘行为，
@@ -213,8 +294,8 @@ in
         qutebrowser = "W";
         emacs = "E";
         "emacsclient" = "E";
-        zed = "E";
-        "dev.zed.Zed" = "E";
+        code = "E";
+        Code = "E";
         thunar = "F";
         "org.gnome.Nautilus" = "F";
         thunderbird = "M";
@@ -242,23 +323,25 @@ in
       };
       settings.mainBar = {
         layer = "top";
-        position = "bottom";
-        output = [
-          primaryOutput
-          laptopOutput
-        ];
+        position = "top";
         height = 24;
-        spacing = 8;
+        spacing = 6;
 
         modules-left = [
           "sway/workspaces"
           "sway/mode"
         ];
-        modules-center = [ "clock" ];
+        modules-center = [ "sway/window" ];
         modules-right = [
+          "idle_inhibitor"
           "tray"
           "network"
+          "bluetooth"
           "pulseaudio"
+          "memory"
+          "battery"
+          "clock"
+          "custom/power"
         ];
 
         "sway/workspaces" = {
@@ -268,25 +351,80 @@ in
           format = "{name}";
         };
         tray = {
-          icon-size = 16;
-          spacing = 8;
+          icon-size = 14;
+          spacing = 6;
         };
         network = {
-          interval = 5;
+          interval = 10;
           format-wifi = "W {signalStrength}%";
           format-ethernet = "E";
           format-disconnected = "N/A";
-          tooltip = false;
+          tooltip-format = "{ifname}: {ipaddr}/{cidr}";
+          on-click = "nm-connection-editor";
+        };
+        bluetooth = {
+          format = "B";
+          format-disabled = "B off";
+          format-connected = "B {num_connections}";
+          tooltip-format = "{controller_alias}\t{controller_address}";
+          tooltip-format-connected = "{device_enumerate}";
+          tooltip-format-enumerate-connected = "{device_alias}\t{device_address}";
+          on-click = "blueman-manager";
         };
         pulseaudio = {
           format = "V {volume}%";
           format-muted = "V mute";
-          on-click = "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
-          tooltip = false;
+          scroll-step = 5;
+          on-click = "pavucontrol";
+          on-click-right = "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
+          tooltip-format = "{desc}";
+        };
+        memory = {
+          interval = 10;
+          states = {
+            warning = 75;
+            critical = 90;
+          };
+          format = "M {percentage}%";
+          tooltip-format = "Memory: {used:0.1f} GiB / {total:0.1f} GiB\nSwap: {swapUsed:0.1f} GiB / {swapTotal:0.1f} GiB";
+          on-click = "${terminal} -e ${lib.getExe pkgs.btop}";
+        };
+        battery = {
+          interval = 10;
+          states = {
+            warning = 20;
+            critical = 7;
+          };
+          format = "P {capacity}%";
+          format-charging = "P+ {capacity}%";
+          format-plugged = "AC {capacity}%";
+          tooltip-format = "{timeTo} · {power} W";
         };
         clock = {
+          interval = 60;
           format = "{:%m-%d %H:%M}";
           tooltip-format = "{:%Y-%m-%d %A}";
+        };
+        idle_inhibitor = {
+          format = "{icon}";
+          format-icons = {
+            activated = "Awake";
+            deactivated = "Idle";
+          };
+          tooltip = true;
+        };
+        "sway/window" = {
+          format = "{title}";
+          max-length = 80;
+          rewrite = {
+            "(.*) — Mozilla Firefox" = "$1";
+            "(.*) - Visual Studio Code" = "$1";
+          };
+        };
+        "custom/power" = {
+          format = "Power";
+          tooltip = false;
+          on-click = "sway-power-menu";
         };
       };
       style = ''
@@ -305,7 +443,7 @@ in
 
         #workspaces button {
           color: #8b949e;
-          padding: 0 7px;
+          padding: 0 5px;
         }
 
         #workspaces button.focused,
@@ -315,19 +453,139 @@ in
         }
 
         #mode,
+        #idle_inhibitor,
         #tray,
         #network,
+        #bluetooth,
         #pulseaudio,
+        #memory,
+        #battery,
         #clock {
+          padding: 0 6px;
+        }
+
+        #battery.warning,
+        #memory.warning {
+          color: #ffd37f;
+        }
+
+        #battery.critical {
+          color: #ff7f7f;
+        }
+
+        #memory.critical {
+          background: #ff7f7f;
+          color: #111318;
+        }
+
+        #custom-power {
+          background: #7fc8ff;
+          color: #111318;
           padding: 0 8px;
         }
       '';
     };
 
+    home.sessionVariables = {
+      MOZ_ENABLE_WAYLAND = "1";
+      NIXOS_OZONE_WL = "1";
+      QT_QPA_PLATFORM = "wayland;xcb";
+      SDL_VIDEODRIVER = "wayland,x11";
+      XDG_CURRENT_DESKTOP = "sway";
+      XDG_SESSION_DESKTOP = "sway";
+    };
+
+    systemd.user.services.polkit-gnome-authentication-agent = {
+      Unit = {
+        Description = "PolicyKit authentication agent";
+        After = [ "sway-session.target" ];
+        PartOf = [ "sway-session.target" ];
+      };
+      Service = {
+        Type = "simple";
+        ExecStart = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
+        Restart = "on-failure";
+        RestartSec = 1;
+      };
+      Install.WantedBy = [ "sway-session.target" ];
+    };
+
+    systemd.user.services.fcitx5 = {
+      Unit = {
+        Description = "Fcitx5 input method daemon";
+        After = [ "sway-session.target" ];
+        PartOf = [ "sway-session.target" ];
+      };
+      Service = {
+        Type = "simple";
+        ExecStart = "/run/current-system/sw/bin/fcitx5";
+        Restart = "on-failure";
+        RestartSec = 2;
+      };
+      Install.WantedBy = [ "sway-session.target" ];
+    };
+
+    systemd.user.services.swaybg = {
+      Unit = {
+        Description = "Sway wallpaper";
+        After = [ "sway-session.target" ];
+        PartOf = [ "sway-session.target" ];
+      };
+      Service = {
+        Type = "simple";
+        ExecStart = "${setWallpaper}";
+        Restart = "on-failure";
+        RestartSec = 2;
+      };
+      Install.WantedBy = [ "sway-session.target" ];
+    };
+
+    systemd.user.services.network-manager-applet.Service = {
+      Restart = "on-failure";
+      RestartSec = 2;
+    };
+
+    systemd.user.services.blueman-applet.Service = {
+      Restart = "on-failure";
+      RestartSec = 2;
+    };
+
+    systemd.user.services.udiskie.Service = {
+      Restart = "on-failure";
+      RestartSec = 2;
+    };
+
     wayland.windowManager.sway = {
       enable = true;
-      systemd.enable = true;
+      systemd = {
+        enable = true;
+        # Keep D-Bus activated applications in sync with the Sway session,
+        # including the input method and native Wayland preferences.
+        variables = [
+          "DISPLAY"
+          "WAYLAND_DISPLAY"
+          "SWAYSOCK"
+          "XDG_CURRENT_DESKTOP"
+          "XDG_SESSION_DESKTOP"
+          "XDG_SESSION_TYPE"
+          "NIXOS_OZONE_WL"
+          "MOZ_ENABLE_WAYLAND"
+          "QT_QPA_PLATFORM"
+          "SDL_VIDEODRIVER"
+          "GTK_IM_MODULE"
+          "QT_IM_MODULE"
+          "XMODIFIERS"
+          "INPUT_METHOD"
+          "SDL_IM_MODULE"
+          "XCURSOR_THEME"
+          "XCURSOR_SIZE"
+          "LANG"
+          "LC_CTYPE"
+          "LC_ALL"
+        ];
+      };
       wrapperFeatures.gtk = true;
+      xwayland = true;
 
       config = {
         modifier = mod;
@@ -358,32 +616,20 @@ in
         output = {
           # 主显示器：24 寸 2560x1440，放在全局坐标原点，也就是左侧。
           ${primaryOutput} = {
-            mode = "2560x1440@165.001Hz";
+            mode = "2560x1440@165Hz";
             scale = "1.25";
             position = "0 0";
           };
-          # 笔记本内屏：位于 DP-1 右侧。
-          # DP-1 使用 1.25 缩放后逻辑宽度是 2048，所以 eDP-1 的 x 从 2048 开始。
+          # 笔记本内屏：使用原生 16:10 模式。Kanshi 会在外屏连接时将其关闭。
           ${laptopOutput} = {
-            mode = "1920x1080@120.030Hz";
+            mode = "2560x1600@120Hz";
             scale = "1.60";
-            position = "2048 0";
+            position = "0 0";
           };
         };
 
-        # 关闭 Sway 内置 swaybar，改由 Waybar 提供底部状态栏。
+        # 关闭 Sway 内置 swaybar，改由 Waybar 提供顶部状态栏。
         bars = [ ];
-
-        startup = [
-          { command = "fcitx5 -d"; }
-          { command = "${lib.getExe pkgs.mako}"; }
-          { command = "nm-applet --indicator"; }
-          { command = "blueman-applet"; }
-          { command = "${setWallpaper}"; }
-          {
-            command = "dbus-update-activation-environment --systemd WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP GTK_IM_MODULE QT_IM_MODULE XMODIFIERS INPUT_METHOD SDL_IM_MODULE LANG LC_CTYPE LC_ALL";
-          }
-        ];
 
         window = {
           border = 0;
@@ -413,12 +659,8 @@ in
           };
         };
 
-        # 启动后默认显示 workspace 1；workspace 1-5 固定到主显示器，6-10 固定到内屏。
+        # Kanshi 切换输出时由 Sway 自动迁移工作区，避免工作区绑定到已禁用的显示器。
         defaultWorkspace = "workspace number 1";
-        workspaceOutputAssign = builtins.map (item: {
-          workspace = item.workspace;
-          output = item.output;
-        }) workspaceOutputAssign;
 
         keybindings = {
           "${mod}+Tab" = "workspace next";
@@ -451,6 +693,9 @@ in
           "${mod}+Shift+b" = "exec blueman-manager";
           "${mod}+Shift+d" = "exec wdisplays";
           "${mod}+Shift+n" = "exec nm-connection-editor";
+          "${mod}+Escape" = "exec sway-power-menu";
+          "${mod}+n" = "exec makoctl dismiss";
+          "${mod}+Ctrl+n" = "exec makoctl dismiss --all";
 
           "--locked XF86AudioMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
           "--locked XF86AudioLowerVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-";
@@ -482,11 +727,21 @@ in
       };
 
       extraConfig = ''
+        workspace_auto_back_and_forth yes
+        focus_on_window_activation smart
+        popup_during_fullscreen smart
+        mouse_warping output
+
         for_window [app_id="firefox" title="^Picture-in-Picture$"] floating enable, sticky enable
+        for_window [app_id="^(pavucontrol|org.pulseaudio.pavucontrol|nm-connection-editor|blueman-manager|wdisplays|swappy)$"] floating enable, resize set 900 650, move position center
         for_window [window_role="pop-up"] floating enable
         for_window [window_role="bubble"] floating enable
         for_window [window_role="dialog"] floating enable
         for_window [window_type="dialog"] floating enable
+        for_window [window_type="utility"] floating enable
+        for_window [window_type="toolbar"] floating enable
+        for_window [app_id=".*"] inhibit_idle fullscreen
+        for_window [class=".*"] inhibit_idle fullscreen
       '';
     };
   };

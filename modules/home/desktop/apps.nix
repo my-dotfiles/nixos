@@ -21,12 +21,18 @@ in
     home.packages =
       # optionalPkg "bitwarden-desktop"
       optionalPkg "libreoffice-fresh"
+      ++ optionalPkg "imv"
       ++ optionalPkg "mediaelch"
       ++ optionalPkg "qutebrowser"
+      ++ optionalPkg "simple-scan"
       ++ optionalPkg "thunderbird"
+      ++ optionalPkg "vscode"
+      ++ optionalPkg "xarchiver"
+      ++ optionalPkg "zathura"
+      ++ optionalPkg "zed-editor"
       ++ optionalPkg "zotero"
       ++ optionalPkg "prismlauncher"
       ++ optionalPkg "faugus-launcher";
-    
+
   };
 }
