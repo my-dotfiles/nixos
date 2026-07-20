@@ -25,7 +25,7 @@ let
       };
       tun = {
         enable = true;
-        stack = "mixed";
+        stack = "gvisor";
         auto-route = true;
         auto-detect-interface = true;
         dns-hijack = [ "any:53" ];
@@ -72,7 +72,7 @@ let
       };
       tun = {
         enable = true;
-        stack = "mixed";
+        stack = "gvisor";
         auto-route = true;
         auto-detect-interface = true;
         dns-hijack = [ "any:53" ];
