@@ -40,6 +40,7 @@
         enable = true;
         autoStart = false;
       };
+      libvirt.enable = true;
       openssh.enable = true;
       pipewire.enable = true;
       printing.enable = true;

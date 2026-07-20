@@ -11,9 +11,10 @@
     ../core/swap.nix
     ../core/users.nix
     ../desktop/thunar.nix
-    ../services/jellyfin.nix
     ../services/docker.nix
     ../services/flatpak.nix
+    ../services/jellyfin.nix
+    ../services/libvirt.nix
     ../services/openssh.nix
     ../services/pipewire.nix
     ../services/printing.nix
