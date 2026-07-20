@@ -27,7 +27,6 @@ in
       pciutils
       usbutils
       gparted
-      flclash
       bubblewrap
     ];
 

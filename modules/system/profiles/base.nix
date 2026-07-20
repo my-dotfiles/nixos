@@ -15,6 +15,7 @@
     ../services/flatpak.nix
     ../services/jellyfin.nix
     ../services/libvirt.nix
+    ../services/mihomo.nix
     ../services/openssh.nix
     ../services/pipewire.nix
     ../services/printing.nix

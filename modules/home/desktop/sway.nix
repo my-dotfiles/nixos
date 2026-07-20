@@ -13,7 +13,6 @@ let
   menu = "${fuzzel} --launch-prefix='${appRunner}'";
   primaryOutput = "DP-1";
   laptopOutput = "eDP-1";
-  flclashAppId = "com.follow.clash";
   screenshotDir = "${config.home.homeDirectory}/Pictures/Screenshots";
   wallpaper = "${config.home.homeDirectory}/Pictures/图片/walls/nord/a_cat_walking_on_a_hill.png";
   swaymsg = lib.getExe' pkgs.sway "swaymsg";
@@ -58,33 +57,7 @@ let
       exec ${lib.getExe pkgs.swaybg} -i "${wallpaper}" -m fill
     fi
   '';
-  flclashGui = pkgs.writeShellScriptBin "flclash-gui" ''
-    has_window() {
-      ${swaymsg} -t get_tree \
-        | ${lib.getExe pkgs.jq} -e '.. | objects | select(.app_id? == "${flclashAppId}")' >/dev/null
-    }
-
-    if ${pkgs.procps}/bin/pgrep -x FlClash >/dev/null; then
-      if has_window; then
-        ${swaymsg} '[app_id="${flclashAppId}"] scratchpad show, focus'
-        exit 0
-      fi
-
-      ${pkgs.procps}/bin/pkill -x FlClash
-      sleep 1
-    fi
-
-    exec ${lib.getExe' pkgs.flclash "FlClash"} "$@"
-  '';
   closeWindow = pkgs.writeShellScriptBin "close-sway-window" ''
-    app_id="$(${swaymsg} -t get_tree \
-      | ${lib.getExe pkgs.jq} -r '.. | objects | select(.focused? == true) | .app_id // empty' \
-      | ${pkgs.coreutils}/bin/head -n1)"
-
-    if [ "$app_id" = "${flclashAppId}" ]; then
-      exec ${swaymsg} move scratchpad
-    fi
-
     exec ${swaymsg} kill
   '';
   screenshot =
@@ -279,7 +252,6 @@ in
       clipboardPin
       clipboardUnpin
       pkgs.cliphist
-      flclashGui
       pkgs.fuzzel
       jq
       libnotify
@@ -298,18 +270,6 @@ in
       wdisplays
       xdg-utils
     ];
-
-    xdg.dataFile."applications/flclash.desktop".text = ''
-      [Desktop Entry]
-      Categories=Network
-      Exec=flclash-gui %U
-      GenericName=FlClash
-      Icon=flclash
-      Keywords=FlClash;Clash;ClashMeta;Proxy;
-      Name=FlClash
-      Type=Application
-      Version=1.5
-    '';
 
     services.mako = {
       enable = true;
@@ -433,7 +393,7 @@ in
     };
 
     # 使用 Waybar 替代 swaybar。Waybar 的 tray 模块更接近传统桌面托盘行为，
-    # FLClash、Steam 这类应用的右键菜单优先交给它处理。
+    # Steam 这类应用的右键菜单优先交给它处理。
     programs.workstyle = {
       enable = true;
       systemd = {
@@ -457,8 +417,6 @@ in
         thunderbird = "M";
         steam = "S";
         Steam = "S";
-        "com.follow.clash" = "C";
-        FlClash = "C";
         Alacritty = "T";
         alacritty = "T";
         "org.pwmt.zathura" = "D";

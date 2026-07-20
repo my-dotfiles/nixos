@@ -41,6 +41,7 @@
         autoStart = false;
       };
       libvirt.enable = true;
+      mihomo.enable = true;
       openssh.enable = true;
       pipewire.enable = true;
       printing.enable = true;
