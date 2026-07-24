@@ -174,12 +174,11 @@ bindsym --locked XF86AudioStop exec playerctl stop
 bindsym --locked XF86MonBrightnessDown exec sway-osd brightness-down
 bindsym --locked XF86MonBrightnessUp exec sway-osd brightness-up
 
-# Match the Niri screenshot shortcuts.
-bindsym Ctrl+Shift+$mod+4 exec screenshot-area
-bindsym Alt+Ctrl+Shift+$mod+4 exec screenshot-screen
-bindsym Print exec screenshot-screen
-bindsym Shift+Print exec screenshot-edit
-bindsym Ctrl+Print exec screenshot-window
+# Screenshot shortcuts for keyboards without a Print key.
+bindsym $mod+Shift+s exec screenshot-area
+bindsym $mod+Ctrl+Shift+s exec screenshot-edit
+bindsym $mod+Ctrl+s exec screenshot-screen
+bindsym $mod+Alt+s exec screenshot-window
 
 ### Window rules
 
