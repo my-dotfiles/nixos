@@ -118,17 +118,26 @@ git -C /home/yurikon/nixos-config diff --cached --binary
 locale 键位和 Mihomo 规则等迁移重点。不要退回旧的 `92e338f` 快照，也不要只复制
 Nix 文件而遗漏其引用的原生配置文件。
 
-### 2.2 完成不可替代数据备份
+### 2.2 完成安装必需备份
 
-严格执行配套审计清单的第 3 节和第 9 节。备份目标必须是 Linux 文件系统或能保留
-owner、mode、ACL、xattr 和符号链接的备份仓库。当前 2TB 盘本身不是它自己的备份。
+本次已确认安装过程完整保留 2TB KIOXIA 盘，所以不把 old-home 或 media 再复制到
+Momonga。严格执行配套审计清单第 9 节，把会随 512GB root 格式化而消失的系统状态、
+配置仓库、ESP、硬件/磁盘清单和两份指南保存到：
+
+```text
+/run/media/yurikon/Momonga/MyData/Gentoo-Migration-20260729-final
+```
+
+Momonga 是 exFAT。普通文件系统复制不能保留 Unix 元数据，因此仓库和系统状态都放在
+tar 内；包含 secret 的系统状态使用仓库现有 age recipient 加密。
 
 迁移前最低要求：
 
-- [ ] `/home/yurikon` 有一份与 2TB 物理独立的完整备份。
-- [ ] ESP 全量备份。
-- [ ] `/etc` 和 `/var` 中需迁移的 root-only 状态已经用 `sudo` 备份。
-- [ ] 备份生成文件清单和校验文件，并做过抽样恢复。
+- [ ] 执行 `./scripts/backup-gentoo-migration.sh` 并看到 `Backup completed`。
+- [ ] `sha256sum --check SHA256SUMS` 全部通过。
+- [ ] 三个 Git bundle 均通过 `git bundle verify`，迁移仓库完成一次临时 clone。
+- [ ] `system-state.tar.age` 能用旧 home 中的 age 私钥解密并列出目录。
+- [ ] `inventory/system-state-paths.txt` 已检查，没有漏掉现场存在的 root-only 状态。
 - [ ] 明确接受格式化 512GB 根分区会删除当前 NixOS。
 
 root-only 状态重点：
@@ -144,7 +153,8 @@ root-only 状态重点：
 - `/var/lib/jellyfin/`
 - Docker、libvirt 状态（当前盘点表明没有容器/卷和 VM，但仍要现场复核）
 
-用户秘密使用单独加密备份：
+下列用户秘密仍留在不会格式化的 2TB old-home；迁移后只选择性恢复，不复制到
+Momonga：
 
 - `~/.ssh`、`~/.gnupg`
 - `~/.config/sops/age/keys.txt`
@@ -152,7 +162,8 @@ root-only 状态重点：
 - Mihomo 订阅、节点/provider 文件
 - 邮箱凭据、OAuth token、浏览器会话
 
-不要把这些秘密写进本仓库。
+不要把这些秘密写进本仓库。Mihomo、NetworkManager、SSH host key、Tailscale 等位于
+512GB 的 root-only secret 已进入 age 加密的 `system-state.tar.age`。
 
 ### 2.3 准备“离线安装包”
 
@@ -397,9 +408,12 @@ live # blkid
 - KIOXIA `2FCKS0F5Z0E8` 是约 1.8 TiB。
 - KIOXIA 两个 ext4 分区 UUID 与第 0.3 节一致。
 
-把当前表保存到备份介质：
+把当前表保存到已经校验过的 Momonga 备份目录；先把 Momonga 挂到
+`<BACKUP_MOUNT>`，其值应是
+`/run/media/yurikon/Momonga/MyData/Gentoo-Migration-20260729-final/inventory/live`：
 
 ```sh
+live # mkdir -p <BACKUP_MOUNT>
 live # lsblk -f > <BACKUP_MOUNT>/pre-format-lsblk.txt
 live # sfdisk --dump \
   /dev/disk/by-id/nvme-Micron_MTFDKBA512TFH_220434EACA5D \
@@ -2218,12 +2232,12 @@ gentoo # revdep-rebuild
 
 ### 21.5 何时可以清理备份
 
-只有以下全部成立才考虑清理旧系统备份：
+只有以下全部成立才考虑清理 Momonga 上的安装备份：
 
 1. 上述所有验收完成。
-2. 不可替代数据抽样校验通过。
+2. 2TB old-home 和 media 均已挂载，所需数据抽样校验通过。
 3. 加密秘密已验证能解密和登录。
-4. 至少保留一份与 2TB 物理独立的备份。
+4. 三个配置仓库已有新的可读副本或远端副本。
 5. Gentoo 已稳定使用至少一周并完成一次 kernel/world 更新。
 
 即使如此，也保留 `nixos-config` 的完整工作树和本迁移仓库作为长期参考。

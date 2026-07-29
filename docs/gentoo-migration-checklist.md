@@ -7,7 +7,9 @@
 > 配置基线：`ecf1ba04655aad6f01f264c1aa2624a0bb17e1df`；审计时工作树干净
 > 目标：Gentoo + OpenRC、全新 Bash 用户环境、优先恢复 Sway、Emacs 和系统服务
 > 目标硬件：当前 Lenovo 本机，Intel i5-12500H + Iris Xe + NVIDIA RTX 2050
-> 存储目标：512GB 盘承载新系统和新 home；2TB 盘只选择性复用旧数据
+> 存储目标：512GB 盘承载新系统和新 home；2TB 盘在安装期间整盘保留，只选择性复用
+> 旧数据
+> 安装备份：`/run/media/yurikon/Momonga/MyData/Gentoo-Migration-20260729-final`
 
 本文是迁移时逐项勾选的清单。旧迁移纲要中的 AMD 目标是假设草案，已经失效；实际安装
 以 [gentoo-remote-reinstall-runbook.md](./gentoo-remote-reinstall-runbook.md) 第 10
@@ -17,7 +19,8 @@
 
 只有同时满足下列条件，才能认为迁移完成：
 
-- [ ] NixOS 配置仓库、所有有意义的未提交工作和私密状态至少有两份可读取副本。
+- [ ] Momonga 上的安装必需备份通过 SHA-256 校验，敏感系统状态可用旧 home 中的
+  age 私钥解密。
 - [ ] 2TB 盘没有被格式化；两个 ext4 分区的 UUID、文件数量和抽样校验均正常。
 - [ ] Gentoo 能在不挂载 2TB 盘时启动、登录 Bash、联网并进入最小 Sway 会话。
 - [ ] 2TB 盘挂载后，选择的数据目录在新 home 下出现，UID/GID、ACL 和写权限正确。
@@ -28,7 +31,7 @@
   Flatpak、usbmuxd 按预期启动或保持手动启动。
 - [ ] 邮件、rclone、浏览器、WeChat、Zotero、Steam 和游戏存档已恢复或明确放弃。
 - [ ] 完成一次重启和一次 suspend/resume 验收。
-- [ ] NixOS 仍可回退启动，或已保留可独立恢复的完整备份。
+- [ ] NixOS 根分区只在第 9 节的安装必需备份和恢复抽查完成后格式化。
 
 ## 1. 迁移前的已知事实
 
@@ -53,9 +56,10 @@
 - `~/Videos` 约 1.2GB；
 - `~/Mail` 和 `~/.thunderbird` 各约 0.8GB。
 
-当前 2TB 媒体分区只剩约 131GB，不能把它当作旧 home 的唯一备份。当前只检测到一个
-VFAT 可移动盘 `/run/media/yurikon/BEA6-BBCE`；VFAT 不适合直接保存需要 Unix
-权限、ACL、xattr、符号链接和大小写语义的 home 备份。
+本次安装已经明确保证 2TB KIOXIA 整盘不会被清理，因此不再把 old-home 和 media
+复制到外置盘。外置盘 Momonga 是 exFAT，不能直接保存 Unix owner、ACL、xattr 和
+符号链接；第 9 节将安装必需文件放进 tar，敏感系统状态再用 age 加密。tar 内部保留
+元数据，exFAT 只承载归档文件。
 
 ### 1.2 用户和权限
 
@@ -308,8 +312,8 @@ sops 加密文件和 age 私钥。Gentoo 上需要用 `umask 077` 把 secret 解
 - [ ] `~/Zotero` 文献附件库。
 - [ ] `~/Mail` Maildir；即使服务器可重新同步，也要保存本地 flags、草稿和未同步邮件。
 - [ ] `~/.thunderbird` profile。
-- [ ] `/data/media/movies` 和 `/data/media/tv`；若 2TB 盘原盘复用，也至少要有
-  不可替代媒体的独立备份。
+- [ ] `/data/media/movies` 和 `/data/media/tv` 保留在 2TB 原盘；本次不复制到
+  Momonga，安装时用磁盘 by-id 和 UUID 双重保护。
 
 ### 3.5 输入法、剪贴板和桌面状态
 
@@ -669,79 +673,139 @@ rclone：
 
 ## 9. 备份执行清单
 
-### 9.1 备份介质
+### 9.1 本次范围
 
-- [ ] 准备 Linux 文件系统目标，完整备份建议至少 900GB 可用空间。
-- [ ] 至少一份备份与 2TB 原盘物理独立。
-- [ ] secret 备份使用加密容器、restic/borg repository 或加密 tar。
-- [ ] 记录备份介质 UUID、加密恢复口令的离线位置。
-- [ ] 不把当前 VFAT U 盘作为唯一 home 备份。
+安装时只格式化 512GB Micron 的 root 分区。2TB KIOXIA 的 old-home 和 media 两个
+ext4 分区均完整保留，因此本次 Momonga 备份只包含：
 
-### 9.2 第一次在线复制
+- 三个配置仓库的完整工作树、`.git`、bundle、HEAD、status 和 binary patch；
+- ESP；
+- NetworkManager、Mihomo、SSH host key、Tailscale、Bluetooth/iOS pairing、
+  Jellyfin 和 CUPS 等位于 512GB 上的 root-only 状态；
+- 磁盘、挂载、硬件、网络、服务和 Flatpak 清单；
+- 本清单与远程重装手册的离线副本。
 
-以下命令是模板；先把 `BACKUP_ROOT` 换成已确认的专用目录。第一次执行不要添加
-`--delete`：
+本次明确不复制：
 
-```bash
-BACKUP_ROOT=/mnt/backup/nixos-final
+- 2TB old-home 中的 `Learning`、`Documents`、`Pictures`、`Mail`、Steam、
+  浏览器、密钥和其他用户数据；
+- 2TB media 分区；
+- `/nix/store`、缓存、Docker 镜像和空的 libvirt runtime。
 
-rsync -aHAX --numeric-ids --info=progress2 \
-  /home/yurikon/ "$BACKUP_ROOT/home-yurikon/"
+Momonga 的 UUID 必须为 `EB7F-5025`，目标目录固定为：
 
-rsync -aHAX --numeric-ids --info=progress2 \
-  /data/media/ "$BACKUP_ROOT/data-media/"
+```text
+/run/media/yurikon/Momonga/MyData/Gentoo-Migration-20260729-final
 ```
 
-root 状态：
+本次执行记录：目标约 304MB、38 个普通文件；`SHA256SUMS` 覆盖其余 37 个文件且
+全部通过。三个 bundle 均记录完整历史且可以 clone，工作树 tar 包含本清单和备份脚本，
+`system-state.tar.age` 已实际解密并确认包含 ESP、NetworkManager、Mihomo、SSH 和
+Tailscale。`/etc/jellyfin` 未安装，其余第 9.3 节要求的 root-only 路径均已收入归档。
+
+### 9.2 在旧 NixOS 上执行
+
+1. 保持 2TB 两个分区和 Momonga 都已挂载。不要关闭网络、SSH 或桌面应用；这些应用
+   的用户状态留在不会格式化的 2TB 上。
+2. 查看目标身份和可用空间：
+
+   ```bash
+   findmnt -T /run/media/yurikon/Momonga -o SOURCE,FSTYPE,UUID,OPTIONS
+   df -h /run/media/yurikon/Momonga
+   ```
+
+   只有看到 `exfat` 和 UUID `EB7F-5025` 才继续。
+3. 确认目标目录尚不存在：
+
+   ```bash
+   test ! -e \
+     /run/media/yurikon/Momonga/MyData/Gentoo-Migration-20260729-final
+   ```
+
+4. 从本仓库运行备份脚本：
+
+   ```bash
+   cd /home/yurikon/nixos-to-gentoo
+   ./scripts/backup-gentoo-migration.sh
+   ```
+
+5. 出现 Polkit 授权窗口时输入本机管理员密码。该步骤只读取 `/boot`、`/etc` 和
+   `/var` 的选定目录；它不会写 512GB/2TB 内置盘，也不会执行 `--delete`。
+6. 等待脚本打印 `Backup completed`。脚本会先验证 Momonga 的 UUID/文件系统，
+   拒绝覆盖同名目录；敏感系统状态保存为
+   `archives/system-state.tar.age`。
+
+若脚本因目标目录已存在而停止，不要删除或覆盖旧目录。给新一轮备份传入另一个以
+`Gentoo-Migration-` 开头的目录，例如：
 
 ```bash
-sudo install -d -m 0700 "$BACKUP_ROOT/root"
-sudo rsync -aHAXR --numeric-ids \
-  /etc/NetworkManager/system-connections/ \
-  /var/lib/NetworkManager/ \
-  /etc/mihomo/ \
-  /var/lib/private/mihomo/ \
-  /etc/ssh/ \
-  /var/lib/tailscale/ \
-  /var/lib/bluetooth/ \
-  /var/lib/lockdown/ \
-  /var/lib/jellyfin/ \
-  /var/cache/jellyfin/ \
-  /etc/cups/ \
-  "$BACKUP_ROOT/root/"
+./scripts/backup-gentoo-migration.sh \
+  /run/media/yurikon/Momonga/MyData/Gentoo-Migration-20260729-retry
 ```
 
-对于正在写入的数据库，第一次在线复制只用于缩短停机时间，不能替代最终静默复制。
+### 9.3 校验和恢复抽查
 
-### 9.3 最终静默复制
+1. 完整校验所有归档：
 
-- [ ] 提交/归档所有未提交工作。
-- [ ] 关闭 Firefox、Brave、Thunderbird、Zotero、Steam、PrismLauncher、
-  WeChat、Spotify、OBS、VS Code/Zed、Codex 和 Pi。
-- [ ] 停止 mbsync timer、Emacs daemon、rclone mounts。
-- [ ] 停止 Jellyfin、Docker、libvirt 和 Mihomo 后复制它们的状态。
-- [ ] Tailscale、NetworkManager 和 SSH 最后停止，避免过早失去远程连接。
-- [ ] 再运行一次相同 rsync；不要在未检查目标路径时使用 `--delete`。
-- [ ] 执行 `sync`。
-- [ ] 最安全的最终复制方式是从 live environment 挂载源分区并复制，避免 SQLite/WAL
-  和浏览器 profile 正在变化。
+   ```bash
+   BACKUP_ROOT=/run/media/yurikon/Momonga/MyData/Gentoo-Migration-20260729-final
+   cd "$BACKUP_ROOT"
+   sha256sum --check SHA256SUMS
+   ```
 
-### 9.4 校验
+2. 确认仓库 bundle 可以读取，并把迁移仓库临时 clone 到 `/tmp`：
 
-- [ ] 保存 `lsblk -f`、`findmnt`、`blkid`、`id`、`getfacl`、包和服务清单。
-- [ ] 对配置、密钥、Org、论文、代码、存档生成 SHA-256 manifest。
-- [ ] 对大媒体至少校验文件数量、总字节数，并对全部文件或抽样生成 checksum。
-- [ ] 在另一目录试恢复一个 Git 仓库、一个 age/sops secret、一个 Org 文件、
-  一个游戏存档和一个浏览器 profile。
-- [ ] `rsync --dry-run -aHAX --numeric-ids SOURCE/ BACKUP/` 不应再报告必需文件差异。
-- [ ] 随机抽取文件确认中文文件名、符号链接、执行位、ACL、xattr 均保留。
+   ```bash
+   VERIFY_REPO=$(mktemp -d)
+   git -C "$VERIFY_REPO" init -q
+   git -C "$VERIFY_REPO" bundle verify \
+     "$BACKUP_ROOT/repositories/nixos-config.bundle"
+   git -C "$VERIFY_REPO" bundle verify \
+     "$BACKUP_ROOT/repositories/nixos-to-gentoo.bundle"
+   git -C "$VERIFY_REPO" bundle verify \
+     "$BACKUP_ROOT/repositories/nixos-config-macos.bundle"
+   RESTORE_TEST=$(mktemp -d)
+   git clone "$BACKUP_ROOT/repositories/nixos-to-gentoo.bundle" \
+     "$RESTORE_TEST/nixos-to-gentoo"
+   git -C "$RESTORE_TEST/nixos-to-gentoo" fsck --full
+   ```
+
+3. 确认 tar 可读取且包含三个工作树：
+
+   ```bash
+   tar -tf "$BACKUP_ROOT/archives/config-repositories.tar" \
+     | sed -n '1,20p'
+   ```
+
+4. 用仍在 2TB old-home 中的 age 私钥检查加密归档。此命令只列目录，不写恢复文件：
+
+   ```bash
+   age -d -i /home/yurikon/.config/sops/age/keys.txt \
+     "$BACKUP_ROOT/archives/system-state.tar.age" \
+     | tar -tf - \
+     | sed -n '1,40p'
+   ```
+
+5. 核对 `inventory/system-state-paths.txt`。必须至少显示 `/boot`、
+   `/etc/NetworkManager`、`/etc/mihomo`、`/etc/ssh` 和 `/var/lib/tailscale`
+   为 `included`；确实未安装的状态可显示 `missing`。
+6. 执行 `sync`，然后正常弹出 Momonga。不要在校验前格式化 512GB。
+
+### 9.4 进入 Live 环境后的最后门槛
+
+1. 只读挂载 Momonga，重新执行 `sha256sum --check SHA256SUMS`。
+2. 保存 Live 环境看到的 `lsblk` 和两个内置盘的分区表到同一备份目录。
+3. 对照第 0.3 节的 by-id、型号、容量和 UUID。
+4. 只允许格式化 Micron
+   `...220434EACA5D-part2`；KIOXIA `...2FCKS0F5Z0E8` 的整盘和两个分区都不得
+   出现在任何 `mkfs` 命令中。
 
 ## 10. Gentoo 安装与恢复顺序
 
 ### 阶段 A：冻结和保护磁盘
 
 - [ ] 打印或离线保存本清单。
-- [ ] 完成第 9 节备份和恢复演练。
+- [ ] 完成第 9 节的 Momonga 备份、SHA-256 校验、bundle clone 和 age 解密抽查。
 - [ ] 物理确认 512GB 与 2TB 盘的型号、容量和 UUID。
 - [ ] Gentoo 安装期间不格式化 UUID 为 `e6ea...` 和 `fef3...` 的两个分区。
 - [ ] 如条件允许，安装/分区 512GB 时临时断开 2TB 盘。
@@ -829,7 +893,7 @@ sudo rsync -aHAXR --numeric-ids \
 - [ ] SSH/GPG/age/rclone/gh 认证正常。
 - [ ] Org、论文、Zotero、Mail、Thunderbird、WeChat 数据可读。
 - [ ] Steam 云存档和至少一个本地存档可用。
-- [ ] 备份仍保留，不因首次成功启动而立即删除。
+- [ ] Momonga 安装备份仍保留，不因首次成功启动而立即删除。
 
 ## 12. 明确不直接迁移的内容
 
