@@ -351,8 +351,8 @@ in
       bar_color = ff7f7fff
     '';
 
-    # Prefer the external monitor when it is connected. When DP-1 disappears,
-    # Kanshi restores the laptop panel automatically.
+    # Use both displays while docked, with the external monitor on the left.
+    # When DP-1 disappears, Kanshi restores the laptop-only profile.
     services.kanshi = {
       enable = true;
       systemdTarget = "sway-session.target";
@@ -370,7 +370,10 @@ in
               }
               {
                 criteria = laptopOutput;
-                status = "disable";
+                status = "enable";
+                mode = "2560x1600@120Hz";
+                position = "2048,0";
+                scale = 1.6;
               }
             ];
           };

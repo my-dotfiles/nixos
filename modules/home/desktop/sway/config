@@ -39,7 +39,6 @@ client.background #ffffff
 
 input "type:keyboard" {
     xkb_layout us
-    xkb_options ctrl:nocaps
 }
 
 input "type:touchpad" {
@@ -50,8 +49,8 @@ input "type:touchpad" {
 
 ### Outputs
 
-# External 24-inch 2560x1440 display. Kanshi disables the laptop panel when
-# this output is connected.
+# External 24-inch 2560x1440 display. In the docked Kanshi profile the laptop
+# panel is placed to its right.
 output "DP-1" {
     mode 2560x1440@165Hz
     position 0 0
@@ -60,7 +59,7 @@ output "DP-1" {
 
 output "eDP-1" {
     mode 2560x1600@120Hz
-    position 0 0
+    position 2048 0
     scale 1.60
 }
 
@@ -105,6 +104,27 @@ bindsym $mod+Shift+Down move down
 bindsym $mod+Shift+Up move up
 bindsym $mod+Shift+Right move right
 
+# Navigate physical outputs explicitly without changing the existing
+# container-focused directional bindings.
+bindsym $mod+Ctrl+h focus output left
+bindsym $mod+Ctrl+j focus output down
+bindsym $mod+Ctrl+k focus output up
+bindsym $mod+Ctrl+l focus output right
+bindsym $mod+Ctrl+Left focus output left
+bindsym $mod+Ctrl+Down focus output down
+bindsym $mod+Ctrl+Up focus output up
+bindsym $mod+Ctrl+Right focus output right
+
+# Move the complete focused workspace, including its container layout.
+bindsym $mod+Ctrl+Shift+h move workspace to output left
+bindsym $mod+Ctrl+Shift+j move workspace to output down
+bindsym $mod+Ctrl+Shift+k move workspace to output up
+bindsym $mod+Ctrl+Shift+l move workspace to output right
+bindsym $mod+Ctrl+Shift+Left move workspace to output left
+bindsym $mod+Ctrl+Shift+Down move workspace to output down
+bindsym $mod+Ctrl+Shift+Up move workspace to output up
+bindsym $mod+Ctrl+Shift+Right move workspace to output right
+
 bindsym $mod+b splith
 bindsym $mod+v splitv
 bindsym $mod+s layout stacking
@@ -135,9 +155,11 @@ mode "resize" {
 
 ### Workspaces
 
-bindsym $mod+Tab workspace next
-bindsym $mod+Shift+Tab workspace prev
+bindsym $mod+Tab workspace next_on_output
+bindsym $mod+Shift+Tab workspace prev_on_output
 
+# Workstyle dynamically changes the full workspace name. Match its stable
+# numeric prefix so switching and moving keep working after every rename.
 bindsym $mod+1 workspace number 1
 bindsym $mod+2 workspace number 2
 bindsym $mod+3 workspace number 3

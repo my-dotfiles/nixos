@@ -125,6 +125,7 @@ let
       rules = [
         "DOMAIN-SUFFIX,lan,DIRECT"
         "DOMAIN-SUFFIX,local,DIRECT"
+        "DOMAIN-SUFFIX,codeberg.org,DIRECT"
         "GEOSITE,private,DIRECT"
         "GEOSITE,CN,DIRECT"
         "IP-CIDR,10.0.0.0/8,DIRECT,no-resolve"

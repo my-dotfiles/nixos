@@ -19,7 +19,7 @@ in
         LayoutList=us
         LayoutLoopCount=-1
         Model=pc105
-        Options=ctrl:nocaps
+        Options=
         ResetOldOptions=true
         Use=true
         VariantList=

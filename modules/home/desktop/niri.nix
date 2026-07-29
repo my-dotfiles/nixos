@@ -20,13 +20,12 @@ in
           keyboard {
               xkb {
                   layout "us"
-                  options "ctrl:nocaps"
                   // You can set rules, model, layout, variant and options.
                   // For more information, see xkeyboard-config(7).
 
                   // For example:
                   // layout "us,ru"
-                  // options "grp:win_space_toggle,compose:ralt,ctrl:nocaps"
+                  // options "grp:win_space_toggle,compose:ralt"
 
                   // If this section is empty, niri will fetch xkb settings
                   // from org.freedesktop.locale1. You can control these using

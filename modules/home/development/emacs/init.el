@@ -590,6 +590,20 @@
   "Directory for short-lived Org notes before they are moved elsewhere.")
 (make-directory yurikon/org-quick-notes-directory t)
 
+(require 'ox-latex)
+(add-to-list 'org-latex-classes
+             '("ctexart"
+               "\\documentclass[UTF8,a4paper]{ctexart}"
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")
+               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+               ("\\paragraph{%s}" . "\\paragraph*{%s}")
+               ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+(setq org-latex-default-class "ctexart"
+      org-latex-compiler "xelatex"
+      org-latex-pdf-process
+      '("latexmk -xelatex -interaction=nonstopmode -output-directory=%o %f"))
+
 (require 'ox-publish)
 
 (setq org-publish-project-alist

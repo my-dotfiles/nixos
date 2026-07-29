@@ -7,6 +7,10 @@ in
   options.myHome.cli.ssh.enable = lib.mkEnableOption "OpenSSH client configuration";
 
   config = lib.mkIf cfg.enable {
+    systemd.user.tmpfiles.rules = [
+      "z %h/.ssh/id_ed25519_codeberg 0600 - - -"
+    ];
+
     programs.ssh = {
       enable = true;
       enableDefaultConfig = false;
@@ -21,6 +25,12 @@ in
           serverAliveCountMax = 3;
         };
 
+        "codeberg.org" = {
+          hostname = "codeberg.org";
+          user = "git";
+          identityFile = [ "~/.ssh/id_ed25519_codeberg" ];
+          identitiesOnly = true;
+        };
         macos = {
           hostname = "100.120.108.67";
           user = "yurikon";

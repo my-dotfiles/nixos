@@ -12,6 +12,14 @@ let
   treeSitterMermaid = pkgs.vimPlugins.nvim-treesitter.builtGrammars.mermaid;
   mmdc = lib.getExe' pkgs.mermaid-cli "mmdc";
   wlCopy = lib.getExe' pkgs.wl-clipboard "wl-copy";
+  orgTex = pkgs.texliveSmall.withPackages (
+    ps: with ps; [
+      ctex
+      fandol
+      latexmk
+      xetex
+    ]
+  );
 in
 {
   options.myHome.development.emacs.enable = lib.mkEnableOption "Emacs configuration";
@@ -66,7 +74,6 @@ in
             ]
           ))
           vertico
-          which-key
           htmlize
 
           ace-window
@@ -127,6 +134,10 @@ in
       fd
       sqlite
       wl-clipboard
+      # Emacs 仅在遇到 Nix 未预装的 Tree-sitter grammar 时使用 cc。
+      stdenv.cc
+      # 使用 XeLaTeX/CTeX 导出包含中文的 Org 文档。
+      orgTex
     ];
 
     home.file.".emacs.d/init.el".text =
