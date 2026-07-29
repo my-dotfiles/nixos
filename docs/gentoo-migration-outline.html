@@ -1,0 +1,1990 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#16324a">
+  <meta name="description" content="NixOS 到 Gentoo OpenRC 的迁移纲要：迁移等级、系统边界、模块判断与实施顺序。">
+  <title>NixOS → Gentoo（OpenRC）迁移纲要</title>
+    <style type="text/css">:root {
+--ink: #17232d;
+--ink-soft: #52606b;
+--navy: #16324a;
+--navy-deep: #0e263a;
+--paper: #fcfbf7;
+--canvas: #f1efe9;
+--line: #ddd9cf;
+--line-strong: #c9c3b6;
+--white: #fff;
+--a: #16775a;
+--a-bg: #e1f3eb;
+--b: #176da3;
+--b-bg: #e3f0f8;
+--c: #b05a0b;
+--c-bg: #fbead9;
+--n: #745868;
+--n-bg: #eee6eb;
+--danger: #a23c32;
+--sidebar: 286px;
+--shadow: 0 12px 40px rgba(24, 35, 45, .08);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 1.5rem; }
+body {
+margin: 0;
+color: var(--ink);
+background: var(--canvas);
+font-family: Inter, "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+font-size: 16px;
+line-height: 1.75;
+text-rendering: optimizeLegibility;
+}
+a { color: #17658f; text-decoration-thickness: 1px; text-underline-offset: .18em; }
+a:hover { color: #0f4665; }
+button, input { font: inherit; }
+button { color: inherit; }
+.reading-progress {
+position: fixed;
+z-index: 100;
+inset: 0 0 auto;
+height: 3px;
+background: transparent;
+}
+.reading-progress span {
+display: block;
+width: 0;
+height: 100%;
+background: linear-gradient(90deg, #2ca981, #59bfd0);
+}
+.sidebar {
+position: fixed;
+z-index: 30;
+inset: 0 auto 0 0;
+width: var(--sidebar);
+display: flex;
+flex-direction: column;
+color: #dfe8ec;
+background: var(--navy-deep);
+border-right: 1px solid rgba(255,255,255,.08);
+}
+.sidebar-head { padding: 27px 26px 20px; }
+.brand {
+display: flex;
+align-items: center;
+gap: 13px;
+color: #fff;
+text-decoration: none;
+}
+.brand-mark {
+display: grid;
+place-items: center;
+width: 38px;
+height: 38px;
+border: 1px solid rgba(255,255,255,.45);
+border-radius: 12px 5px 12px 5px;
+color: #d6fff0;
+font: 700 21px/1 Georgia, serif;
+background: rgba(255,255,255,.06);
+}
+.brand strong, .brand small { display: block; }
+.brand strong { font-size: 15px; letter-spacing: .08em; }
+.brand small { color: #9db1bc; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+.sidebar-close { display: none; }
+.toc {
+overflow: auto;
+flex: 1;
+padding: 10px 18px 24px;
+scrollbar-width: thin;
+scrollbar-color: #486071 transparent;
+}
+.eyebrow {
+margin: 0 0 9px;
+color: #7d8b94;
+font-size: 11px;
+font-weight: 800;
+letter-spacing: .16em;
+text-transform: uppercase;
+}
+.toc > .eyebrow { margin-left: 9px; color: #8299a6; }
+.toc ul { margin: 0; padding: 0; list-style: none; }
+.toc > ul > li > a { display: none; }
+.toc > ul > li > ul { display: block; }
+.toc li { margin: 2px 0; }
+.toc a {
+display: block;
+padding: 6px 10px;
+border-left: 2px solid transparent;
+border-radius: 0 6px 6px 0;
+color: #aebfc8;
+font-size: 12.5px;
+line-height: 1.4;
+text-decoration: none;
+transition: .18s ease;
+}
+.toc a:hover { color: #fff; background: rgba(255,255,255,.055); }
+.toc a.active {
+color: #fff;
+border-left-color: #65c6aa;
+background: linear-gradient(90deg, rgba(101,198,170,.16), transparent);
+}
+.sidebar-foot {
+padding: 18px 26px 22px;
+border-top: 1px solid rgba(255,255,255,.09);
+}
+.baseline span, .baseline strong, .baseline small { display: block; }
+.baseline span { color: #7f98a5; font-size: 10px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+.baseline strong { margin: 2px 0 0; color: #dbe7eb; font: 600 13px ui-monospace, monospace; }
+.baseline small { color: #8298a4; font-size: 11px; }
+.print-button {
+width: 100%;
+margin-top: 13px;
+padding: 7px 10px;
+color: #b8cbd4;
+border: 1px solid rgba(255,255,255,.15);
+border-radius: 6px;
+background: transparent;
+font-size: 11px;
+cursor: pointer;
+}
+.print-button:hover { color: #fff; border-color: rgba(255,255,255,.35); }
+.mobile-bar { display: none; }
+main { margin-left: var(--sidebar); }
+.hero {
+position: relative;
+overflow: hidden;
+color: #fff;
+background:
+radial-gradient(circle at 88% 18%, rgba(90,190,190,.19), transparent 25%),
+linear-gradient(123deg, #112c42 0%, #17435a 68%, #195868 100%);
+}
+.hero::after {
+content: "";
+position: absolute;
+right: -50px;
+bottom: -120px;
+width: 380px;
+height: 380px;
+border: 1px solid rgba(255,255,255,.09);
+border-radius: 50%;
+box-shadow: 0 0 0 60px rgba(255,255,255,.025), 0 0 0 120px rgba(255,255,255,.018);
+}
+.hero-inner {
+position: relative;
+z-index: 1;
+max-width: 1180px;
+margin: auto;
+padding: 76px 56px 64px;
+}
+.kicker {
+margin: 0 0 15px;
+color: #9cd8d0;
+font-size: 11px;
+font-weight: 800;
+letter-spacing: .18em;
+}
+.kicker span { margin: 0 .45em; color: #698b98; }
+.hero h1 {
+margin: 0;
+color: #fff;
+font: 600 clamp(42px, 6vw, 74px)/1.05 Georgia, "Noto Serif CJK SC", serif;
+letter-spacing: -.035em;
+}
+.hero h1 .arrow { color: #62c4b0; font-weight: 400; }
+.subtitle {
+max-width: 720px;
+margin: 20px 0 28px;
+color: #c8d9df;
+font-size: 17px;
+letter-spacing: .02em;
+}
+.hero-meta { display: flex; flex-wrap: wrap; gap: 8px; }
+.hero-meta span {
+padding: 6px 12px;
+border: 1px solid rgba(255,255,255,.14);
+border-radius: 99px;
+color: #c4d5db;
+background: rgba(4,20,31,.12);
+font-size: 11px;
+}
+.hero-meta b { margin-right: .4em; color: #80d4c2; }
+.workspace {
+max-width: 1280px;
+margin: 0 auto;
+padding: 34px 48px 80px;
+}
+.orientation {
+padding: 28px 30px 24px;
+border: 1px solid var(--line);
+border-radius: 12px;
+background: var(--paper);
+box-shadow: var(--shadow);
+}
+.orientation-head {
+display: flex;
+align-items: end;
+justify-content: space-between;
+gap: 30px;
+margin-bottom: 20px;
+}
+.orientation-head h2 { margin: 0; font: 600 25px/1.25 Georgia, "Noto Serif CJK SC", serif; }
+.orientation-head > p {
+max-width: 490px;
+margin: 0;
+color: var(--ink-soft);
+font-size: 13px;
+line-height: 1.6;
+}
+.priority-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.priority-card {
+display: flex;
+gap: 13px;
+min-height: 108px;
+padding: 17px;
+border: 1px solid var(--line);
+border-radius: 8px;
+background: #fff;
+}
+.priority-card h3 { margin: 1px 0 4px; font-size: 14px; }
+.priority-card p { margin: 0; color: var(--ink-soft); font-size: 12px; line-height: 1.55; }
+.card-grade {
+display: grid;
+place-items: center;
+flex: 0 0 34px;
+width: 34px;
+height: 34px;
+border-radius: 6px;
+font-family: Arial, sans-serif;
+font-size: 17px;
+font-weight: 800;
+line-height: 1;
+}
+.priority-a .card-grade { color: var(--a); background: var(--a-bg); }
+.priority-c .card-grade { color: var(--c); background: var(--c-bg); }
+.priority-n .card-grade { color: var(--n); background: var(--n-bg); }
+.grade-legend {
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+gap: 9px 18px;
+margin-top: 20px;
+padding-top: 17px;
+border-top: 1px solid var(--line);
+color: var(--ink-soft);
+font-size: 11px;
+}
+.legend-title { color: var(--ink); font-weight: 800; }
+.grade {
+display: inline-grid;
+place-items: center;
+width: 23px;
+height: 23px;
+margin-right: 4px;
+border-radius: 5px;
+font-family: Arial, sans-serif;
+font-size: 12px;
+font-style: normal;
+font-weight: 800;
+line-height: 1;
+}
+.grade-a { color: var(--a); background: var(--a-bg); }
+.grade-b { color: var(--b); background: var(--b-bg); }
+.grade-c { color: var(--c); background: var(--c-bg); }
+.grade-n { color: var(--n); background: var(--n-bg); }
+.toolbar {
+position: sticky;
+z-index: 20;
+top: 0;
+display: flex;
+align-items: center;
+gap: 14px;
+margin: 22px 0;
+padding: 10px;
+border: 1px solid var(--line);
+border-radius: 10px;
+background: rgba(252,251,247,.94);
+box-shadow: 0 8px 20px rgba(24,35,45,.07);
+backdrop-filter: blur(12px);
+}
+.search-wrap {
+position: relative;
+display: flex;
+align-items: center;
+flex: 1;
+min-width: 240px;
+color: #75838b;
+}
+.search-wrap > span { position: absolute; left: 11px; font-size: 19px; transform: rotate(-15deg); }
+.search-wrap input {
+width: 100%;
+height: 37px;
+padding: 0 90px 0 37px;
+color: var(--ink);
+outline: none;
+border: 1px solid var(--line);
+border-radius: 7px;
+background: #fff;
+font-size: 13px;
+}
+.search-wrap input:focus { border-color: #7aa9af; box-shadow: 0 0 0 3px rgba(92,164,168,.13); }
+.search-wrap kbd {
+position: absolute;
+right: 9px;
+padding: 1px 6px;
+border: 1px solid #d7d4cc;
+border-radius: 4px;
+color: #8a918f;
+background: #f6f5f1;
+font: 10px/1.7 ui-monospace, monospace;
+}
+#search-clear {
+position: absolute;
+right: 8px;
+width: 24px;
+height: 24px;
+padding: 0;
+border: 0;
+color: #6f7b81;
+background: transparent;
+cursor: pointer;
+}
+.filter-group { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+.filter-group > span { margin: 0 4px; color: #7b858a; font-size: 10px; font-weight: 700; }
+.filter-group button {
+width: 30px;
+height: 30px;
+padding: 0;
+border: 1px solid var(--line);
+border-radius: 6px;
+background: #fff;
+font: 800 11px/1 ui-monospace, monospace;
+cursor: pointer;
+}
+.filter-group button[data-grade-filter="A"] { color: var(--a); }
+.filter-group button[data-grade-filter="B"] { color: var(--b); }
+.filter-group button[data-grade-filter="C"] { color: var(--c); }
+.filter-group button[data-grade-filter="N"] { color: var(--n); }
+.filter-group button:hover, .filter-group button.active { color: #fff; border-color: transparent; }
+.filter-group button[data-grade-filter="A"]:hover, .filter-group button[data-grade-filter="A"].active { background: var(--a); }
+.filter-group button[data-grade-filter="B"]:hover, .filter-group button[data-grade-filter="B"].active { background: var(--b); }
+.filter-group button[data-grade-filter="C"]:hover, .filter-group button[data-grade-filter="C"].active { background: var(--c); }
+.filter-group button[data-grade-filter="N"]:hover, .filter-group button[data-grade-filter="N"].active { background: var(--n); }
+.search-results {
+position: absolute;
+top: calc(100% + 7px);
+right: 0;
+left: 0;
+max-height: min(65vh, 520px);
+overflow: auto;
+padding: 7px;
+border: 1px solid var(--line-strong);
+border-radius: 9px;
+background: #fff;
+box-shadow: 0 18px 50px rgba(15,33,44,.18);
+}
+.search-result {
+display: grid;
+grid-template-columns: 38px 1fr;
+gap: 10px;
+width: 100%;
+padding: 10px;
+text-align: left;
+border: 0;
+border-radius: 6px;
+background: transparent;
+cursor: pointer;
+}
+.search-result:hover, .search-result:focus { outline: 0; background: #f2f6f5; }
+.result-index { color: #99a2a5; font: 10px/1.6 ui-monospace, monospace; }
+.result-title { display: block; color: var(--navy); font-size: 11px; font-weight: 800; }
+.result-snippet { display: block; color: var(--ink-soft); font-size: 11px; line-height: 1.55; }
+.result-snippet mark { padding: 0 2px; color: inherit; background: #f7e6a8; }
+.search-empty { padding: 30px; color: var(--ink-soft); text-align: center; font-size: 12px; }
+.content-layout { display: grid; grid-template-columns: minmax(0, 1fr) 190px; gap: 22px; align-items: start; }
+.document {
+min-width: 0;
+padding: 38px 44px 56px;
+border: 1px solid var(--line);
+border-radius: 12px;
+background: var(--paper);
+box-shadow: var(--shadow);
+}
+.document > header { display: none; }
+.document h1 { display: none; }
+.document h2 {
+position: relative;
+margin: 4.2rem 0 1.35rem;
+padding: 0 52px 13px 0;
+border-bottom: 1px solid var(--line-strong);
+color: var(--navy);
+font: 600 27px/1.3 Georgia, "Noto Serif CJK SC", serif;
+letter-spacing: -.02em;
+scroll-margin-top: 80px;
+}
+.document h2:first-of-type { margin-top: 0; }
+.document h2::before {
+content: attr(data-section);
+display: block;
+margin-bottom: 5px;
+color: #7d939d;
+font: 800 10px/1.2 ui-monospace, monospace;
+letter-spacing: .14em;
+}
+.document h3 {
+margin: 2.5rem 0 .9rem;
+color: #203d4e;
+font-size: 19px;
+line-height: 1.4;
+scroll-margin-top: 80px;
+}
+.document h4 { color: #294b5e; }
+.heading-actions {
+position: absolute;
+right: 0;
+bottom: 11px;
+display: flex;
+gap: 4px;
+}
+.heading-action {
+width: 27px;
+height: 27px;
+padding: 0;
+border: 1px solid transparent;
+border-radius: 5px;
+color: #8b979c;
+background: transparent;
+font-size: 13px;
+cursor: pointer;
+}
+.heading-action:hover { color: var(--navy); border-color: var(--line); background: #fff; }
+.document p { margin: .8em 0; }
+.document strong { color: #102e40; }
+.document blockquote {
+margin: 0 0 2rem;
+padding: 13px 18px;
+border-left: 4px solid #55a895;
+border-radius: 0 7px 7px 0;
+color: #405760;
+background: #edf5f1;
+font-size: 13px;
+}
+.document blockquote p { margin: .25em 0; }
+.document ul, .document ol { padding-left: 1.4em; }
+.document li { margin: .3em 0; padding-left: .2em; }
+.document li::marker { color: #4a8e86; font-weight: 700; }
+.document code {
+padding: .1em .35em;
+border: 1px solid #dedbd2;
+border-radius: 4px;
+color: #1f5268;
+background: #f2f0e9;
+font: .88em/1.5 "SFMono-Regular", Consolas, monospace;
+overflow-wrap: anywhere;
+}
+.document table {
+width: 100%;
+margin: 1.4rem 0 2rem;
+border-collapse: separate;
+border-spacing: 0;
+border: 1px solid var(--line-strong);
+border-radius: 8px;
+background: #fff;
+font-size: 12.5px;
+line-height: 1.55;
+}
+.document thead th {
+position: sticky;
+top: 57px;
+z-index: 3;
+padding: 10px 12px;
+color: #fff;
+text-align: left;
+border-right: 1px solid rgba(255,255,255,.12);
+background: var(--navy);
+font-size: 11px;
+letter-spacing: .03em;
+}
+.document thead th:first-child { border-radius: 7px 0 0; }
+.document thead th:last-child { border-radius: 0 7px 0 0; border-right: 0; }
+.document tbody td {
+padding: 11px 12px;
+vertical-align: top;
+border-top: 1px solid #e5e2db;
+border-right: 1px solid #ebe8e1;
+}
+.document tbody td:last-child { border-right: 0; }
+.document tbody tr:nth-child(even) { background: #faf9f5; }
+.document tbody tr:hover { background: #f2f7f5; }
+.document tbody tr.grade-focus { background: #fff7e8; animation: row-pulse 1.2s ease; }
+@keyframes row-pulse { 50% { box-shadow: inset 4px 0 #d69535; } }
+.grade-badge {
+display: inline-flex;
+gap: 2px;
+align-items: center;
+white-space: nowrap;
+}
+.grade-badge i {
+display: inline-grid;
+place-items: center;
+min-width: 23px;
+height: 23px;
+padding: 0 5px;
+border-radius: 5px;
+font-family: Arial, sans-serif;
+font-size: 11px;
+font-style: normal;
+font-weight: 800;
+line-height: 1;
+}
+.grade-badge .a { color: var(--a); background: var(--a-bg); }
+.grade-badge .b { color: var(--b); background: var(--b-bg); }
+.grade-badge .c { color: var(--c); background: var(--c-bg); }
+.grade-badge .n { color: var(--n); background: var(--n-bg); }
+.section-flash { animation: section-pulse 1.4s ease; }
+@keyframes section-pulse { 40% { color: #b05910; } }
+.collapsed-block { display: none !important; }
+.page-rail { position: sticky; top: 82px; display: grid; gap: 12px; }
+.rail-card {
+padding: 17px;
+border: 1px solid var(--line);
+border-radius: 9px;
+background: rgba(252,251,247,.75);
+}
+.rail-card ol { margin: 0; padding-left: 1.35em; color: var(--ink-soft); font-size: 11px; }
+.rail-card li { margin: .5em 0; }
+.rail-card li::marker { color: #31877b; font-weight: 800; }
+.rail-note { border-color: #e4c9a8; background: #fff9ed; }
+.rail-note strong { color: #8b4b10; font-size: 11px; }
+.rail-note p { margin: 5px 0 0; color: #76634e; font-size: 10.5px; line-height: 1.6; }
+.back-to-top {
+position: fixed;
+z-index: 22;
+right: 22px;
+bottom: 22px;
+width: 38px;
+height: 38px;
+padding: 0;
+opacity: 0;
+pointer-events: none;
+border: 0;
+border-radius: 50%;
+color: #fff;
+background: var(--navy);
+box-shadow: 0 5px 18px rgba(15,38,56,.2);
+cursor: pointer;
+transition: .2s;
+}
+.back-to-top.visible { opacity: 1; pointer-events: auto; }
+.toast {
+position: fixed;
+z-index: 80;
+right: 26px;
+bottom: 70px;
+padding: 8px 13px;
+opacity: 0;
+pointer-events: none;
+border-radius: 6px;
+color: #fff;
+background: #173547;
+font-size: 11px;
+transform: translateY(6px);
+transition: .2s;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.scrim { display: none; }
+@media (max-width: 1120px) {
+.content-layout { grid-template-columns: minmax(0, 1fr); }
+.page-rail { display: none; }
+.workspace { padding-right: 32px; padding-left: 32px; }
+}
+@media (max-width: 860px) {
+:root { --sidebar: 280px; }
+html { scroll-padding-top: 70px; }
+body.sidebar-open { overflow: hidden; }
+.mobile-bar {
+position: sticky;
+z-index: 40;
+top: 0;
+display: flex;
+align-items: center;
+justify-content: space-between;
+height: 54px;
+padding: 0 15px;
+color: #fff;
+background: var(--navy-deep);
+}
+.mobile-title { color: #fff; font-size: 13px; font-weight: 700; text-decoration: none; }
+.icon-button { width: 34px; height: 34px; padding: 8px; border: 0; color: #fff; background: transparent; }
+.icon-button span { display: block; height: 1px; margin: 4px 0; background: #fff; }
+.search-button { padding: 0; font-size: 24px; transform: rotate(-15deg); }
+.sidebar { transform: translateX(-100%); transition: transform .22s ease; }
+body.sidebar-open .sidebar { transform: translateX(0); box-shadow: 10px 0 40px rgba(0,0,0,.25); }
+.sidebar-close {
+position: absolute;
+top: 19px;
+right: 16px;
+display: block;
+padding: 0;
+border: 0;
+color: #9cb1bb;
+background: transparent;
+font-size: 25px;
+}
+.scrim { position: fixed; z-index: 29; inset: 0; display: block; background: rgba(9,20,28,.52); }
+.scrim[hidden] { display: none; }
+main { margin-left: 0; }
+.hero-inner { padding: 55px 28px 48px; }
+.workspace { padding: 24px 18px 60px; }
+.priority-grid { grid-template-columns: 1fr; }
+.orientation-head { display: block; }
+.orientation-head > p { margin-top: 10px; }
+.toolbar { top: 63px; flex-wrap: wrap; }
+.filter-group { width: 100%; justify-content: flex-end; }
+.document { padding: 32px 26px 48px; }
+.document h2 { scroll-margin-top: 130px; }
+.document h3 { scroll-margin-top: 130px; }
+}
+@media (max-width: 560px) {
+body { font-size: 14px; }
+.hero h1 { font-size: 41px; }
+.subtitle { font-size: 14px; }
+.hero-meta { gap: 6px; }
+.orientation { padding: 22px 18px; }
+.orientation-head h2 { font-size: 21px; }
+.grade-legend { display: grid; grid-template-columns: 1fr 1fr; }
+.legend-title { grid-column: 1 / -1; }
+.toolbar { padding: 8px; }
+.search-wrap input { padding-right: 35px; }
+.search-wrap kbd { display: none; }
+.document { margin-right: -18px; margin-left: -18px; padding: 29px 18px 46px; border-right: 0; border-left: 0; border-radius: 0; }
+.document h2 { font-size: 23px; }
+.document h3 { font-size: 17px; }
+.document table { display: block; overflow-x: auto; white-space: normal; }
+.document thead th { position: static; min-width: 120px; }
+.document tbody td { min-width: 150px; }
+.document tbody td:last-child { min-width: 260px; }
+}
+@media (prefers-reduced-motion: reduce) {
+html { scroll-behavior: auto; }
+*, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+@media print {
+@page { margin: 16mm; size: A4; }
+body { color: #111; background: #fff; font-size: 10pt; }
+.sidebar, .mobile-bar, .hero, .toolbar, .page-rail, .back-to-top, .toast, .reading-progress { display: none !important; }
+main { margin: 0; }
+.workspace { max-width: none; padding: 0; }
+.orientation { margin-bottom: 10mm; box-shadow: none; break-inside: avoid; }
+.document { padding: 0; border: 0; box-shadow: none; }
+.document h1 { display: block; font: 600 24pt Georgia, serif; }
+.document h2 { margin-top: 10mm; font-size: 17pt; break-after: avoid; }
+.document h3 { font-size: 13pt; break-after: avoid; }
+.heading-actions { display: none; }
+.document table { font-size: 8pt; break-inside: auto; }
+.document thead { display: table-header-group; }
+.document thead th { position: static; color: #111; border: 1px solid #aaa; background: #eee; }
+.document tr { break-inside: avoid; }
+.collapsed-block { display: revert !important; }
+a { color: inherit; text-decoration: none; }
+a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 8pt; }
+}
+</style>
+  </head>
+<body>
+  <div class="reading-progress" aria-hidden="true"><span id="reading-progress-bar"></span></div>
+
+  <header class="mobile-bar">
+    <button class="icon-button" id="menu-button" type="button" aria-label="打开目录" aria-controls="sidebar" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <a class="mobile-title" href="#top">Gentoo 迁移纲要</a>
+    <button class="icon-button search-button" id="mobile-search-button" type="button" aria-label="搜索文档">⌕</button>
+  </header>
+
+  <aside class="sidebar" id="sidebar" aria-label="文档导航">
+    <div class="sidebar-head">
+      <a class="brand" href="#top">
+        <span class="brand-mark" aria-hidden="true">G</span>
+        <span><strong>迁移纲要</strong><small>NixOS → Gentoo</small></span>
+      </a>
+      <button class="sidebar-close" id="sidebar-close" type="button" aria-label="关闭目录">×</button>
+    </div>
+
+    <nav class="toc" id="toc" aria-label="目录">
+      <p class="eyebrow">文档目录</p>
+      <ul>
+      <li><a href="#nixos--gentooopenrc迁移纲要" id="toc-nixos--gentooopenrc迁移纲要">NixOS →
+      Gentoo（OpenRC）迁移纲要</a>
+      <ul>
+      <li><a href="#1-目标与判断标准" id="toc-1-目标与判断标准">1.
+      目标与判断标准</a></li>
+      <li><a href="#2-当前配置基线与目标差异" id="toc-2-当前配置基线与目标差异">2.
+      当前配置基线与目标差异</a></li>
+      <li><a href="#3-a-级应优先保存的原生配置" id="toc-3-a-级应优先保存的原生配置">3. A
+      级：应优先保存的原生配置</a></li>
+      <li><a href="#4-bc-级需要重新落地或精细设计的系统配置" id="toc-4-bc-级需要重新落地或精细设计的系统配置">4. B/C
+      级：需要重新落地或精细设计的系统配置</a></li>
+      <li><a href="#5-nixos-system-模块逐项迁移判断" id="toc-5-nixos-system-模块逐项迁移判断">5. NixOS system
+      模块逐项迁移判断</a></li>
+      <li><a href="#6-home-manager-模块逐项迁移判断" id="toc-6-home-manager-模块逐项迁移判断">6. Home Manager
+      模块逐项迁移判断</a></li>
+      <li><a href="#7-n-级不应直接迁移的内容" id="toc-7-n-级不应直接迁移的内容">7. N
+      级：不应直接迁移的内容</a></li>
+      <li><a href="#8-推荐的迁移顺序" id="toc-8-推荐的迁移顺序">8.
+      推荐的迁移顺序</a></li>
+      <li><a href="#9-后续版本应补齐的产物" id="toc-9-后续版本应补齐的产物">9. 后续版本应补齐的产物</a></li>
+      <li><a href="#10-第一版验收结论" id="toc-10-第一版验收结论">10.
+      第一版验收结论</a></li>
+      </ul></li>
+      </ul>
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="baseline"><span>文档基线</span><strong>92e338f</strong><small>2026-07-24 · 第一版盘点</small></div>
+      <button class="print-button" type="button" onclick="window.print()">打印 / 导出 PDF</button>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim" hidden></div>
+
+  <main id="top">
+    <section class="hero" aria-labelledby="page-title">
+      <div class="hero-inner">
+        <p class="kicker">WORKSTATION MIGRATION PLAYBOOK <span>·</span> OPENRC</p>
+        <h1 id="page-title">NixOS <span class="arrow">→</span> Gentoo</h1>
+        <p class="subtitle">从声明式配置中提取真正需要保留的意图、原生配置与机器事实。</p>
+        <div class="hero-meta">
+          <span><b>状态</b> 第一版盘点</span>
+          <span><b>目标</b> AMD CPU + AMD GPU</span>
+          <span><b>范围</b> 可迁移性梳理</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="workspace">
+      <section class="orientation" aria-label="阅读摘要">
+        <div class="orientation-head">
+          <div>
+            <p class="eyebrow">先看这里</p>
+            <h2>一页掌握迁移边界</h2>
+          </div>
+          <p>本页保留原文全部内容，同时突出“先保存什么、重点重做什么、明确丢弃什么”。</p>
+        </div>
+        <div class="priority-grid">
+          <article class="priority-card priority-a">
+            <span class="card-grade">A</span>
+            <div><h3>优先保存</h3><p>Sway、Emacs、Zellij、Fcitx5、fontconfig 等原生用户配置。</p></div>
+          </article>
+          <article class="priority-card priority-c">
+            <span class="card-grade">C</span>
+            <div><h3>关键路径</h3><p>OpenRC 用户会话、AMD 图形栈、Mihomo、启动与存储策略。</p></div>
+          </article>
+          <article class="priority-card priority-n">
+            <span class="card-grade">N</span>
+            <div><h3>明确排除</h3><p>NixOS/Home Manager 结构，以及旧 Intel/NVIDIA 硬件策略。</p></div>
+          </article>
+        </div>
+        <div class="grade-legend" aria-label="迁移等级图例">
+          <span class="legend-title">迁移等级</span>
+          <span><i class="grade grade-a">A</i> 直接复用</span>
+          <span><i class="grade grade-b">B</i> 重新落地</span>
+          <span><i class="grade grade-c">C</i> 设计 / 验证</span>
+          <span><i class="grade grade-n">N</i> 不迁移</span>
+        </div>
+      </section>
+
+      <section class="toolbar" id="toolbar" aria-label="文档工具">
+        <div class="search-wrap">
+          <span aria-hidden="true">⌕</span>
+          <input id="search-input" type="search" placeholder="搜索服务、模块、配置或关键词…" autocomplete="off" spellcheck="false" aria-label="全文搜索" aria-controls="search-results">
+          <kbd>⌘/Ctrl K</kbd>
+          <button id="search-clear" type="button" aria-label="清除搜索" hidden>×</button>
+        </div>
+        <div class="filter-group" aria-label="按迁移等级定位">
+          <span>快速定位</span>
+          <button type="button" data-grade-filter="A">A</button>
+          <button type="button" data-grade-filter="B">B</button>
+          <button type="button" data-grade-filter="C">C</button>
+          <button type="button" data-grade-filter="N">N</button>
+        </div>
+        <div class="search-results" id="search-results" hidden role="listbox" aria-label="搜索结果"></div>
+      </section>
+
+      <div class="content-layout">
+        <article class="document" id="document">
+          <h1 id="nixos--gentooopenrc迁移纲要">NixOS →
+          Gentoo（OpenRC）迁移纲要</h1>
+          <blockquote>
+          <p>状态：第一版盘点</p>
+          <p>基线：<code>92e338f</code>（2026-07-24）</p>
+          <p>范围：只整理现有配置的可迁移性，不生成 Gentoo
+          配置，也不执行迁移。</p>
+          </blockquote>
+          <h2 id="1-目标与判断标准">1. 目标与判断标准</h2>
+          <p>这次迁移要保存的不是 Nix
+          表达式本身，而是它们表达的配置意图、原生配置和机器事实。 目标
+          Gentoo 机器采用 <strong>AMD CPU + AMD GPU +
+          OpenRC</strong>。因此当前机器的 Intel/NVIDIA
+          混合显卡配置只作为旧机事实记录，不进入目标配置。</p>
+          <p>同一项配置可能同时包含可直接复用和必须重写的部分，例如：</p>
+          <ul>
+          <li><code>hardware-configuration.nix</code> 的文件系统 UUID
+          是旧机事实，可以作为数据迁移核对依据； NixOS 的
+          <code>fileSystems</code> 表达式不能复制到 Gentoo，新机器的
+          UUID 也会不同。</li>
+          <li><code>modules/home/desktop/sway/config</code> 大部分是原生
+          Sway 语法，可以继续使用； 其中的占位符、输出名、Nix store
+          路径和 systemd 用户会话编排必须替换。</li>
+          <li>sops 加密文件可以保留，但 sops-nix 的自动解密、文件权限和
+          shell 注入流程不能照搬。</li>
+          </ul>
+          <p>本文采用四个迁移等级：</p>
+          <table>
+          <thead>
+          <tr>
+          <th>等级</th>
+          <th>含义</th>
+          <th>迁移动作</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+          <td>A</td>
+          <td>原生配置，可直接复用</td>
+          <td>复制到新 dotfiles，再做路径和版本核对</td>
+          </tr>
+          <tr>
+          <td>B</td>
+          <td>配置意图可复用，但要重新落地</td>
+          <td>改写成 Gentoo/OpenRC、PAM、内核或普通配置文件</td>
+          </tr>
+          <tr>
+          <td>C</td>
+          <td>需要先做更精细的设计或实机验证</td>
+          <td>先记录依赖、状态、启动顺序和验证方法</td>
+          </tr>
+          <tr>
+          <td>N</td>
+          <td>NixOS/Home Manager 特有，或与目标硬件冲突</td>
+          <td>不迁移；只保留其表达的意图或留作历史参考</td>
+          </tr>
+          </tbody>
+          </table>
+          <p>“可迁移”不等于“可以盲目复制”。所有硬件名称、包名、USE
+          flag、服务名和路径都应在 Gentoo 实机上重新确认。</p>
+          <h2 id="2-当前配置基线与目标差异">2.
+          当前配置基线与目标差异</h2>
+          <h3 id="21-当前机器事实仅用于盘点">2.1
+          当前机器事实（仅用于盘点）</h3>
+          <ul>
+          <li>主机名：<code>nixos</code>。</li>
+          <li>架构：<code>x86_64-linux</code>。</li>
+          <li>CPU：Intel，启用 <code>kvm-intel</code> 和 Intel
+          microcode。</li>
+          <li>GPU：Intel 核显 + NVIDIA 独显 PRIME offload。
+          <ul>
+          <li>Intel：<code>PCI:0:2:0</code></li>
+          <li>NVIDIA：<code>PCI:1:0:0</code></li>
+          <li>NVIDIA DRM modeset、open kernel
+          module、细粒度电源管理已启用。</li>
+          </ul></li>
+          <li>桌面：Sway；greetd/tuigreet 登录。</li>
+          <li>未启用的备用桌面：Niri/Noctalia、Plasma。</li>
+          <li>文件系统：
+          <ul>
+          <li><code>/</code>：ext4，UUID
+          <code>675b6f26-ba72-423c-8704-376ea011ed1c</code></li>
+          <li><code>/boot</code>：vfat，UUID
+          <code>B552-1C1F</code>，当前权限选项为
+          <code>fmask=0077,dmask=0077</code></li>
+          <li><code>/home</code>：ext4，UUID
+          <code>e6ea7aa4-834f-47c0-8843-8a4ff88d3a55</code></li>
+          <li><code>/data/media</code>：ext4，UUID
+          <code>fef36a86-961e-4148-a2c6-6e56ec9a707f</code></li>
+          </ul></li>
+          <li>交换与内存压力：
+          <ul>
+          <li><code>/home/.swapfile</code>，16 GiB，优先级 10</li>
+          <li>zram 使用 zstd，容量为内存的 25%，优先级 100</li>
+          <li><code>vm.swappiness=20</code></li>
+          <li>systemd-oomd 保护用户 slice</li>
+          </ul></li>
+          <li>用户：<code>yurikon</code>，Fish 登录
+          shell；有效附加组意图包括
+          <code>wheel</code>、<code>networkmanager</code>、<code>docker</code>、<code>libvirtd</code>。</li>
+          </ul>
+          <h3 id="22-目标硬件边界">2.2 目标硬件边界</h3>
+          <p>下列内容明确不迁移：</p>
+          <ul>
+          <li>Intel CPU microcode、<code>kvm-intel</code> 和 Intel CPU
+          profile；</li>
+          <li>NVIDIA 驱动、NVIDIA open kernel
+          module、<code>nvidia-settings</code>；</li>
+          <li>PRIME bus ID、PRIME offload command 和细粒度 NVIDIA
+          电源管理；</li>
+          <li><code>__NV_PRIME_RENDER_OFFLOAD</code>、<code>__GLX_VENDOR_LIBRARY_NAME</code>、
+          <code>__VK_LAYER_NV_optimus</code>；</li>
+          <li>“让 Sway 固定使用 Intel、游戏使用
+          NVIDIA”的所有特殊处理；</li>
+          <li>NVIDIA 专属的 32 位 OpenGL/Vulkan 用户空间。</li>
+          </ul>
+          <p>目标 Gentoo 需要重新设计：</p>
+          <ul>
+          <li>AMD CPU microcode 和 <code>kvm-amd</code>；</li>
+          <li>AMDGPU 内核驱动、固件加载、Mesa OpenGL/Vulkan；</li>
+          <li>AMD GPU 的硬件编解码、32 位游戏栈和电源管理；</li>
+          <li>新机器的 PCI ID、磁盘
+          UUID、输出名、分辨率、刷新率和缩放；</li>
+          <li>是否沿用旧机的分区、swap/zram 和休眠策略。</li>
+          </ul>
+          <h3 id="23-当前服务状态意图">2.3 当前服务状态意图</h3>
+          <p>已配置：</p>
+          <ul>
+          <li>NetworkManager、SSH、PipeWire、CUPS/Avahi、SANE</li>
+          <li>Bluetooth/Blueman、UPower、power-profiles-daemon</li>
+          <li>GVfs、udisks2、Tumbler、gnome-keyring、Polkit</li>
+          <li>Docker、libvirt/virt-manager、Flatpak</li>
+          <li>Jellyfin、Mihomo、Tailscale、usbmuxd</li>
+          <li>Thunar、Steam/Gamemode</li>
+          </ul>
+          <p>特殊的启动策略：</p>
+          <ul>
+          <li>Docker 已安装，但 systemd service/socket
+          没有加入启动目标，意图是按需手动启动。</li>
+          <li>Jellyfin 已安装并开放防火墙，但
+          <code>autoStart=false</code>，意图是按需启动。</li>
+          <li>rclone 的 gdrive/onedrive 用户挂载已定义，但
+          <code>autoStart=false</code>。</li>
+          <li>Mihomo 是系统级 TUN 代理，配置持久化在
+          <code>/etc/mihomo/config.yaml</code>。</li>
+          </ul>
+          <h3 id="24-当前用户环境">2.4 当前用户环境</h3>
+          <ul>
+          <li>Shell/CLI：Fish、Bash、Starship、Git、gh、SSH、Yazi、Zellij，以及常用终端工具。</li>
+          <li>编辑器：Emacs 31 PGTK + 原生 Elisp；Home Manager 通过
+          systemd 用户 socket 启动 daemon。</li>
+          <li>桌面：Sway、Waybar、Mako、Kanshi、Workstyle、Fuzzel、Cliphist、Wob、
+          Udiskie、Polkit agent。</li>
+          <li>输入法：Fcitx5 拼音，自然码双拼和一组自定义行为。</li>
+          <li>字体：Noto/思源/更纱/霞鹜/文泉驿/Maple Mono/Nerd
+          Fonts，并有自定义 fontconfig fallback。</li>
+          <li>邮件：Gmail、iCloud、QQ、163；mbsync/msmtp/mu/mu4e；每 10
+          分钟同步并重建索引。</li>
+          <li>密钥：sops + age；仓库只保存加密数据，age
+          私钥位于用户配置目录。</li>
+          <li>云盘：rclone 的 Google Drive 和 OneDrive FUSE 挂载。</li>
+          </ul>
+          <h2 id="3-a-级应优先保存的原生配置">3. A
+          级：应优先保存的原生配置</h2>
+          <p>这些内容最适合从 Nix 模块中抽成普通 dotfiles，作为 Gentoo
+          版本的稳定输入。</p>
+          <table>
+          <thead>
+          <tr>
+          <th>当前来源</th>
+          <th>可保留内容</th>
+          <th>迁移时的小改动</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+          <td><code>modules/home/desktop/sway/config</code></td>
+          <td>输入、窗口、工作区、快捷键和窗口规则</td>
+          <td>替换三个占位符；输出段按新 AMD 机器重做</td>
+          </tr>
+          <tr>
+          <td><code>modules/home/development/emacs/init.el</code></td>
+          <td>Emacs 主配置</td>
+          <td>替换 Nix 注入的 <code>mmdc</code>、<code>wl-copy</code>
+          绝对路径</td>
+          </tr>
+          <tr>
+          <td><code>modules/home/development/emacs/early-init.el</code></td>
+          <td>Emacs early init</td>
+          <td>核对 Emacs/Gentoo 包版本</td>
+          </tr>
+          <tr>
+          <td><code>modules/home/cli/zellij/config.kdl</code></td>
+          <td>Zellij 配置</td>
+          <td>核对 Zellij 版本语法</td>
+          </tr>
+          <tr>
+          <td><code>desktop/fcitx5.nix</code> 中的文本</td>
+          <td>profile、拼音、Classic UI、标点、Wayland 配置</td>
+          <td>拆为
+          <code>~/.config/fcitx5/**</code>；确认插件名称存在</td>
+          </tr>
+          <tr>
+          <td><code>desktop/fonts.nix</code> 中的 XML</td>
+          <td>fontconfig 渲染与 fallback</td>
+          <td>拆为
+          <code>~/.config/fontconfig/**</code>；按实际字体名修正</td>
+          </tr>
+          <tr>
+          <td><code>desktop/mime.nix</code></td>
+          <td>MIME 默认应用映射</td>
+          <td>生成 <code>~/.config/mimeapps.list</code>，核对 desktop
+          ID</td>
+          </tr>
+          <tr>
+          <td><code>cli/glow.nix</code></td>
+          <td><code>glow.yml</code></td>
+          <td>直接落到 XDG config</td>
+          </tr>
+          <tr>
+          <td><code>desktop/sway.nix</code> 中的配置数据</td>
+          <td>Mako、Kanshi、Waybar、Workstyle、Wob、networkmanager-dmenu</td>
+          <td>转换为各程序原生配置文件</td>
+          </tr>
+          <tr>
+          <td><code>cli/*</code> 中的设置</td>
+          <td>Git、gh、Starship、Alacritty、htop、Yazi、shell alias</td>
+          <td>转为程序原生配置；删除 Nix profile 路径</td>
+          </tr>
+          <tr>
+          <td><code>desktop/mpv.nix</code></td>
+          <td>mpv 播放、Vulkan、语言偏好</td>
+          <td>转为 <code>mpv.conf</code>，在 AMD GPU 上重测硬解</td>
+          </tr>
+          <tr>
+          <td><code>communication/mail.nix</code></td>
+          <td>邮箱地址、IMAP/SMTP、maildir 与同步策略</td>
+          <td>生成 mbsyncrc/msmtprc 和 mu4e
+          配置；密码仍从外部命令读取</td>
+          </tr>
+          <tr>
+          <td><code>development/codex.nix</code>、<code>pi.nix</code></td>
+          <td>本地代理 wrapper 的行为</td>
+          <td>改用普通脚本并确保不包含 token</td>
+          </tr>
+          </tbody>
+          </table>
+          <h3 id="31-可直接保留但不应提交的本机状态">3.1
+          可直接保留，但不应提交的本机状态</h3>
+          <p>下列内容是迁移输入，却不能进入 Git：</p>
+          <ul>
+          <li><code>~/.config/sops/age/keys.txt</code></li>
+          <li>SSH 私钥、known_hosts 中不希望公开的条目</li>
+          <li><code>~/.config/rclone/rclone.conf</code> 及 OAuth
+          token</li>
+          <li>解密后的邮箱密码和 API key</li>
+          <li>Mihomo 订阅 URL、下载后的 provider 文件和选择状态</li>
+          <li>邮件正文与 mu 索引、浏览器会话、Steam
+          登录状态、容器/虚拟机镜像</li>
+          <li>Fcitx 用户词库、剪贴板历史、应用数据库和缓存</li>
+          </ul>
+          <p>这些状态必须使用单独的加密备份清单迁移，不能靠复制仓库完成。</p>
+          <h2 id="4-bc-级需要重新落地或精细设计的系统配置">4. B/C
+          级：需要重新落地或精细设计的系统配置</h2>
+          <h3 id="41-启动内核和文件系统bc">4.1
+          启动、内核和文件系统（B/C）</h3>
+          <table>
+          <thead>
+          <tr>
+          <th>当前意图</th>
+          <th>Gentoo/OpenRC 侧工作</th>
+          <th>需要精细确认</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+          <td>systemd-boot，保留 15 个配置</td>
+          <td>决定继续使用 systemd-boot 还是换其他
+          bootloader；生成内核项</td>
+          <td>systemd-boot 不代表使用 systemd
+          init，但更新流程需另建</td>
+          </tr>
+          <tr>
+          <td>nixpkgs 默认内核</td>
+          <td>选择 distribution kernel 或自编译内核</td>
+          <td>AMDGPU、Sway、TUN、FUSE、KVM、容器所需内核选项</td>
+          </tr>
+          <tr>
+          <td>旧机 initrd 模块清单</td>
+          <td>根据新 AMD 机器重新探测并写入 initramfs</td>
+          <td>不能照抄旧机的存储、Thunderbolt 和控制器模块</td>
+          </tr>
+          <tr>
+          <td>Intel microcode</td>
+          <td>不迁移，改为 AMD microcode</td>
+          <td>bootloader/initramfs 的具体加载方式</td>
+          </tr>
+          <tr>
+          <td>旧机四个文件系统及挂载选项</td>
+          <td>根据新机实际分区生成 <code>/etc/fstab</code></td>
+          <td>哪些数据盘复用、哪些 UUID 会变化</td>
+          </tr>
+          <tr>
+          <td>16 GiB swapfile + 25% zram</td>
+          <td>决定是否保留此策略；建立 OpenRC 启动逻辑和 sysctl</td>
+          <td>新内存容量、创建时机、权限、优先级、休眠需求</td>
+          </tr>
+          <tr>
+          <td>systemd-oomd</td>
+          <td>选择可在 OpenRC 下使用的 OOM 策略</td>
+          <td>不能照搬 user slice；需重新定义内存压力策略</td>
+          </tr>
+          </tbody>
+          </table>
+          <p>迁移前必须在旧机另存数据源清单，并在新机重新采集
+          <code>lspci -nnk</code>、<code>lsblk -f</code>、
+          <code>findmnt</code>、<code>lsmod</code>、EDID/输出名和内核命令行。旧仓库的生成配置不能替代新机探测。</p>
+          <h3 id="42-portageamd-图形栈与包策略c">4.2 Portage、AMD
+          图形栈与包策略（C）</h3>
+          <p>NixOS 的包闭包隐藏了很多编译特性；Gentoo 必须显式决定：</p>
+          <ul>
+          <li>profile、稳定/测试关键字和许可证接受范围；</li>
+          <li>Wayland/XWayland、PipeWire、Bluetooth、printing、scanner、FUSE、TUN、
+          Vulkan、VA-API、AMDGPU、Polkit、PAM、keyring 相关特性；</li>
+          <li>AMD GPU 对应的 Mesa/Vulkan 实现和固件；</li>
+          <li>Steam/Wine 所需的 multilib 与 32 位
+          Mesa/Vulkan/音频栈；</li>
+          <li>AMD CPU microcode、<code>kvm-amd</code>
+          和目标内核版本；</li>
+          <li>Emacs PGTK、native compilation、tree-sitter、mu4e 和 PDF
+          支持；</li>
+          <li>哪些开发工具仍应全局安装，哪些改为项目自己的环境；</li>
+          <li>NixOS 中存在、但 Gentoo
+          仓库未必以同名/同版本提供的软件。</li>
+          </ul>
+          <p>这一阶段应根据目标 AMD 硬件、最终 Gentoo profile 和
+          <code>emerge --info</code> 生成
+          <code>package.use</code>、<code>package.accept_keywords</code>、<code>package.license</code>，不能直接从
+          Nix 包名猜测。</p>
+          <h3 id="43-openrc-系统服务与-runlevelbc">4.3 OpenRC 系统服务与
+          runlevel（B/C）</h3>
+          <p>NixOS 的 <code>services.*.enable</code>
+          同时完成安装、用户组、目录、配置、依赖和启动。 Gentoo
+          需要把每一项拆开检查：</p>
+          <table>
+          <thead>
+          <tr>
+          <th>服务域</th>
+          <th>当前意图</th>
+          <th>OpenRC 迁移重点</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+          <td>网络</td>
+          <td>NetworkManager；reverse-path check 关闭</td>
+          <td>OpenRC runlevel、DNS 所有权、防火墙和 Mihomo TUN
+          的路由关系</td>
+          </tr>
+          <tr>
+          <td>SSH</td>
+          <td>sshd 启用</td>
+          <td>host key 的安全迁移、sshd_config、firewall、runlevel</td>
+          </tr>
+          <tr>
+          <td>音频</td>
+          <td>PipeWire + ALSA + Pulse 兼容 + 32 位 + rtkit</td>
+          <td>用户会话启动、WirePlumber、PAM/DBus、实时权限、Steam 32
+          位</td>
+          </tr>
+          <tr>
+          <td>打印</td>
+          <td>CUPS + Avahi/mDNS</td>
+          <td>OpenRC 依赖、nss-mdns、发现规则、firewall</td>
+          </tr>
+          <tr>
+          <td>扫描</td>
+          <td>SANE</td>
+          <td>backend、udev 权限、实际扫描仪验证</td>
+          </tr>
+          <tr>
+          <td>Bluetooth</td>
+          <td>BlueZ + Blueman</td>
+          <td>bluetooth service、用户权限、agent 与桌面自启</td>
+          </tr>
+          <tr>
+          <td>桌面存储</td>
+          <td>udisks2 + GVfs + Udiskie + Tumbler</td>
+          <td>DBus、Polkit rule、FUSE、会话 agent</td>
+          </tr>
+          <tr>
+          <td>Docker</td>
+          <td>安装但默认不自启；每周 prune；本地代理</td>
+          <td>保持手动启动语义；独立 prune 任务；daemon.json；docker
+          组风险</td>
+          </tr>
+          <tr>
+          <td>libvirt</td>
+          <td>libvirtd + virt-manager</td>
+          <td>daemon 形态、OpenRC 服务、网络、<code>kvm-amd</code>
+          权限</td>
+          </tr>
+          <tr>
+          <td>Flatpak</td>
+          <td>系统启用并添加 Flathub</td>
+          <td>portal、session bus、remote 的幂等初始化</td>
+          </tr>
+          <tr>
+          <td>Jellyfin</td>
+          <td>安装、开放端口、默认不自启</td>
+          <td>服务用户、媒体目录权限、手动启动、数据库状态的备份策略</td>
+          </tr>
+          <tr>
+          <td>Tailscale</td>
+          <td>daemon + firewall</td>
+          <td>runlevel、认证状态、路由/防火墙和 Mihomo 共存</td>
+          </tr>
+          <tr>
+          <td>usbmuxd</td>
+          <td>iPhone/iPad 配对</td>
+          <td>udev、服务、pairing records 的迁移边界</td>
+          </tr>
+          <tr>
+          <td>电源</td>
+          <td>UPower、power-profiles-daemon、lid/power key 策略</td>
+          <td>AMD 平台能力；elogind/ACPI 责任边界；避免重复处理按键</td>
+          </tr>
+          <tr>
+          <td>定时任务</td>
+          <td>Nix GC；邮件每 10 分钟同步</td>
+          <td>Nix GC 若不保留 Nix则删除；邮件改用 cron 或会话级调度</td>
+          </tr>
+          </tbody>
+          </table>
+          <p>Docker、Jellyfin 和 rclone
+          的“已配置但不自动启动”是必须保留的行为，不应在 Gentoo
+          中因为简单加入 <code>default</code> runlevel 而改变。</p>
+          <h3 id="44-mihomoc独立迁移子项目">4.4
+          Mihomo（C，独立迁移子项目）</h3>
+          <p>Mihomo 是当前最复杂的单项系统服务：</p>
+          <ul>
+          <li>系统级 TUN，gVisor stack，自动路由和 DNS hijack；</li>
+          <li>mixed port <code>7890</code>，controller
+          <code>127.0.0.1:9090</code>；</li>
+          <li>fake-IP、GeoIP/GeoSite、订阅 provider、健康检查；</li>
+          <li><code>/etc/mihomo/config.yaml</code>
+          只在首次缺失时创建；</li>
+          <li>运行前准备 geodata；</li>
+          <li>失败后 3 秒重启；</li>
+          <li><code>mihomoctl</code> 和订阅安装脚本直接调用
+          <code>systemctl</code>/<code>journalctl</code>；</li>
+          <li>Nix daemon 和 Docker 另外注入本地代理。</li>
+          </ul>
+          <p>迁移时需要：</p>
+          <ol type="1">
+          <li>将不含订阅 URL 的基线配置保存为普通模板；</li>
+          <li>单独实现 <code>/etc/init.d/mihomo</code> 和
+          <code>/etc/conf.d/mihomo</code>，声明网络、TUN、
+          文件权限、pid/supervision 和 restart 行为；</li>
+          <li>把 CLI 中的 <code>systemctl</code>/<code>journalctl</code>
+          改为 OpenRC 和目标日志方案；</li>
+          <li>决定 geodata 的安装与更新来源；</li>
+          <li>明确 Mihomo、NetworkManager、Tailscale、Docker
+          和防火墙的启动顺序；</li>
+          <li>验证 DNS 泄漏、IPv6、局域网直连、休眠恢复和网络切换；</li>
+          <li>订阅 URL 继续作为本机 secret，绝不写入仓库。</li>
+          </ol>
+          <h3 id="45-sway-登录与桌面系统集成c">4.5 Sway
+          登录与桌面系统集成（C）</h3>
+          <p>当前 NixOS 隐式提供了以下链路：</p>
+          <p><code>greetd/tuigreet → PAM → 用户会话 → Sway → systemd --user target → 桌面服务</code></p>
+          <p>Gentoo/OpenRC 下要重新决定并验证：</p>
+          <ul>
+          <li>greetd 是否继续使用，以及 PAM、环境变量、gnome-keyring
+          解锁如何接入；</li>
+          <li>seat/session 管理由 elogind、seatd 或其他组合承担；</li>
+          <li>Sway 如何在正确的 DBus 用户会话与 XDG runtime
+          目录中启动；</li>
+          <li>Polkit
+          agent、xdg-desktop-portal-wlr/gtk、PipeWire、WirePlumber
+          的启动顺序；</li>
+          <li>lid/power key、suspend、lock-before-sleep 由谁负责；</li>
+          <li>Sway 在 AMDGPU
+          上的渲染、Vulkan、硬件光标和休眠恢复行为；</li>
+          <li><code>DP-1</code>、<code>eDP-1</code>
+          只是旧机名称；新机器需要重建 Kanshi profile。</li>
+          </ul>
+          <p>这是迁移的关键路径。在这条链路通过以前，不应先迁移大量 GUI
+          应用。</p>
+          <h3 id="46-systemd-用户单元c">4.6 systemd 用户单元（C）</h3>
+          <p>下列当前功能依赖 systemd 用户服务、socket 或
+          target，不能翻译成系统级 OpenRC 服务后就算完成：</p>
+          <ul>
+          <li>Sway session target 和环境导入；</li>
+          <li>Polkit GNOME authentication agent；</li>
+          <li>Fcitx5、swaybg、cliphist watcher；</li>
+          <li>Wob FIFO socket activation；</li>
+          <li>swayidle/lock-screen；</li>
+          <li>Waybar、Kanshi、Workstyle、Mako、Udiskie；</li>
+          <li>Emacs daemon/socket activation；</li>
+          <li>mbsync 的 10 分钟 timer；</li>
+          <li>gdrive/onedrive rclone mount。</li>
+          </ul>
+          <p>需要先选择用户会话管理方式，再统一改写。可选方向包括由 Sway
+          原生 <code>exec</code>/包装脚本 管理，或使用专门的用户级
+          supervisor。无论选择哪种方式，都应保证：</p>
+          <ul>
+          <li>服务随图形会话启动和退出，不以 root 身份运行；</li>
+          <li>可重启、可查看日志、不会重复启动；</li>
+          <li>正确继承
+          <code>WAYLAND_DISPLAY</code>、<code>SWAYSOCK</code>、DBus、Fcitx
+          和 XDG 环境；</li>
+          <li>锁屏在 suspend 之前已经真正建立；</li>
+          <li>rclone/邮件/Emacs 这类非桌面服务不会被错误绑死在 Sway
+          生命周期。</li>
+          </ul>
+          <h2 id="5-nixos-system-模块逐项迁移判断">5. NixOS system
+          模块逐项迁移判断</h2>
+          <table>
+          <thead>
+          <tr>
+          <th>当前模块</th>
+          <th>等级</th>
+          <th>结论</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+          <td><code>core/boot</code></td>
+          <td>B/C</td>
+          <td>保留“稳定内核优先”的意图；bootloader、内核和保留策略按
+          Gentoo 重做</td>
+          </tr>
+          <tr>
+          <td><code>core/locale</code></td>
+          <td>A/B</td>
+          <td>保留 <code>Asia/Shanghai</code>、<code>en_US.UTF-8</code>
+          主语言、中英文 LC 分工、US 键盘和
+          <code>ctrl:nocaps</code></td>
+          </tr>
+          <tr>
+          <td><code>core/networking</code></td>
+          <td>B/C</td>
+          <td>继续使用 NetworkManager；reverse-path、防火墙和 TUN/VPN
+          规则显式重做</td>
+          </tr>
+          <tr>
+          <td><code>core/nix</code></td>
+          <td>N</td>
+          <td>仅在 Gentoo 上继续使用 Nix 时才保留
+          flakes、timeout、unfree 和代理策略</td>
+          </tr>
+          <tr>
+          <td><code>core/nix-gc</code></td>
+          <td>N</td>
+          <td>NixOS system generation 不存在；若保留 Nix，另建普通 store
+          GC 策略</td>
+          </tr>
+          <tr>
+          <td><code>core/packages</code></td>
+          <td>B</td>
+          <td><code>vim/wget/git/git-lfs/curl/tree/unzip/file/parted/pciutils/usbutils/gparted/bubblewrap/firefox</code>
+          是基础软件愿望清单</td>
+          </tr>
+          <tr>
+          <td><code>core/swap</code></td>
+          <td>C</td>
+          <td>策略可参考，但容量必须按新 AMD
+          机器的内存与休眠需求重算</td>
+          </tr>
+          <tr>
+          <td><code>core/users</code></td>
+          <td>B</td>
+          <td>重建用户、Fish 登录 shell、wheel 和服务组；不要直接复制
+          UID/GID</td>
+          </tr>
+          <tr>
+          <td><code>hardware-configuration.nix</code></td>
+          <td>C/N</td>
+          <td>只用于旧盘数据定位；新机必须重新探测 initramfs 模块、fstab
+          和 UUID</td>
+          </tr>
+          <tr>
+          <td><code>hardware/cpu/intel</code></td>
+          <td>N</td>
+          <td>目标为 AMD；改成 AMD microcode 与
+          <code>kvm-amd</code></td>
+          </tr>
+          <tr>
+          <td><code>hardware/gpu/nvidia-prime</code></td>
+          <td>N</td>
+          <td>目标为 AMD GPU；PRIME、bus ID、驱动和 offload
+          全部删除</td>
+          </tr>
+          <tr>
+          <td><code>desktop/sway</code></td>
+          <td>B/C</td>
+          <td>软件选择可迁；greetd/PAM/seat/portal/Polkit/电源/会话启动需重建</td>
+          </tr>
+          <tr>
+          <td><code>desktop/thunar</code></td>
+          <td>B</td>
+          <td>保留 Thunar、archive/volman、GVfs、Tumbler、udisks2
+          的功能组合</td>
+          </tr>
+          <tr>
+          <td><code>desktop/steam</code></td>
+          <td>B/C</td>
+          <td>保留 Steam、Protontricks、Gamemode 和 32 位支持；删除
+          NVIDIA 环境并改测 AMDGPU</td>
+          </tr>
+          <tr>
+          <td><code>services/docker</code></td>
+          <td>B/C</td>
+          <td>保留 Compose/Lazydocker、代理、手动启动和每周 prune
+          意图</td>
+          </tr>
+          <tr>
+          <td><code>services/flatpak</code></td>
+          <td>B</td>
+          <td>保留系统 Flatpak 和 Flathub；改为 Gentoo
+          上的幂等初始化</td>
+          </tr>
+          <tr>
+          <td><code>services/jellyfin</code></td>
+          <td>C</td>
+          <td>保留安装但不自启；数据、媒体权限、端口和硬解需另行设计</td>
+          </tr>
+          <tr>
+          <td><code>services/libvirt</code></td>
+          <td>B/C</td>
+          <td>保留 virt-manager 和手动管理能力；改用 AMD KVM 与 OpenRC
+          服务</td>
+          </tr>
+          <tr>
+          <td><code>services/mihomo</code></td>
+          <td>C</td>
+          <td>独立子项目；OpenRC、TUN、DNS、geodata、secret
+          和工具脚本均需重写</td>
+          </tr>
+          <tr>
+          <td><code>services/openssh</code></td>
+          <td>B/C</td>
+          <td>服务可迁；host
+          key、配置、网络暴露和启动级别要安全核对</td>
+          </tr>
+          <tr>
+          <td><code>services/pipewire</code></td>
+          <td>B/C</td>
+          <td>功能组合可迁；OpenRC 用户会话、WirePlumber、rtkit 和 32
+          位库需重建</td>
+          </tr>
+          <tr>
+          <td><code>services/printing</code></td>
+          <td>B/C</td>
+          <td>CUPS/Avahi 可迁；发现、NSS、防火墙和打印机驱动需验证</td>
+          </tr>
+          <tr>
+          <td><code>services/proxy</code></td>
+          <td>N/B</td>
+          <td>Nix daemon 代理不迁；Docker、CLI
+          和需要代理的服务分别显式配置</td>
+          </tr>
+          <tr>
+          <td><code>services/scanning</code></td>
+          <td>B/C</td>
+          <td>SANE 意图可迁；backend、udev
+          和设备权限按实际扫描仪配置</td>
+          </tr>
+          <tr>
+          <td><code>services/tailscale</code></td>
+          <td>B/C</td>
+          <td>服务可迁；认证状态不入库，需核对 OpenRC、路由和防火墙</td>
+          </tr>
+          <tr>
+          <td><code>services/usbmuxd</code></td>
+          <td>B/C</td>
+          <td>服务可迁；udev、配对状态和 iOS 设备实测</td>
+          </tr>
+          </tbody>
+          </table>
+          <p>未启用的 Niri/Noctalia、Plasma 和 AMD
+          示例模块只能作为候选参考。尤其是仓库现有
+          <code>hardware/gpu/amd.nix</code> 只表达了“启用
+          graphics/amdgpu”的很小一部分，不能被误认为 完整的 Gentoo AMD
+          GPU 方案。</p>
+          <h2 id="6-home-manager-模块逐项迁移判断">6. Home Manager
+          模块逐项迁移判断</h2>
+          <table>
+          <thead>
+          <tr>
+          <th>模块组</th>
+          <th>等级</th>
+          <th>结论</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+          <td><code>core/session</code></td>
+          <td>B</td>
+          <td>保留 EDITOR/VISUAL/COLORTERM；删除 Nix profile
+          路径，重新定义登录会话环境</td>
+          </tr>
+          <tr>
+          <td><code>core/shell</code>、<code>cli/fish</code></td>
+          <td>A/B</td>
+          <td>alias、函数可迁；Fish 路径和 <code>hmconfig</code>
+          名称需改</td>
+          </tr>
+          <tr>
+          <td><code>core/xdg</code></td>
+          <td>A</td>
+          <td>XDG 目录约定可直接保留</td>
+          </tr>
+          <tr>
+          <td><code>cli/git</code>、<code>github</code>、<code>ssh</code></td>
+          <td>A/C</td>
+          <td>配置可迁；SSH 私钥不入库，macOS Tailscale 地址需核对</td>
+          </tr>
+          <tr>
+          <td><code>cli/prompt</code></td>
+          <td>A/B</td>
+          <td>保留 Starship preset；不再依赖 Nix build-time 生成</td>
+          </tr>
+          <tr>
+          <td><code>cli/terminal</code></td>
+          <td>A/B</td>
+          <td>工具清单可转为 world 需求；<code>nix-direnv</code>
+          只在继续使用 Nix 时保留</td>
+          </tr>
+          <tr>
+          <td><code>cli/alacritty</code>、<code>htop</code>、<code>glow</code>、<code>yazi</code>、<code>zellij</code></td>
+          <td>A</td>
+          <td>生成原生配置，核对版本和字体</td>
+          </tr>
+          <tr>
+          <td><code>cli/btop</code>、<code>lazygit</code></td>
+          <td>A</td>
+          <td>主要是安装意图，无复杂配置</td>
+          </tr>
+          <tr>
+          <td><code>development/emacs</code></td>
+          <td>A/C</td>
+          <td>Elisp 高度可迁；包来源、tree-sitter
+          grammar、PGTK、daemon/socket 需重做</td>
+          </tr>
+          <tr>
+          <td><code>development/tools</code></td>
+          <td>B</td>
+          <td>Nix 专用工具在 Gentoo
+          主机配置仓库中可能仍有用，但不再是系统迁移必需品</td>
+          </tr>
+          <tr>
+          <td><code>development/codex</code>、<code>pi</code></td>
+          <td>B/C</td>
+          <td>wrapper 可迁；CLI 安装来源、Node/npm 路径和 sandbox
+          能力需确认</td>
+          </tr>
+          <tr>
+          <td><code>desktop/apps</code></td>
+          <td>B</td>
+          <td>作为应用愿望清单；逐项决定 Portage、Flatpak
+          或上游包，不能假定同名</td>
+          </tr>
+          <tr>
+          <td><code>desktop/cursor</code></td>
+          <td>A/B</td>
+          <td>主题名和尺寸可迁；确保 GTK/XCursor/Sway 环境一致</td>
+          </tr>
+          <tr>
+          <td><code>desktop/fonts</code></td>
+          <td>A/C</td>
+          <td>fontconfig 可迁；字体来源、授权、实际 family name
+          要逐项核对</td>
+          </tr>
+          <tr>
+          <td><code>desktop/fcitx5</code></td>
+          <td>A/C</td>
+          <td>用户配置可迁；插件、GTK/Qt 模块、Wayland 启动与 Emacs
+          输入需实测</td>
+          </tr>
+          <tr>
+          <td><code>desktop/lockscreen</code></td>
+          <td>B/C</td>
+          <td>锁屏参数可迁；systemd、suspend
+          顺序和随机壁纸脚本需改写</td>
+          </tr>
+          <tr>
+          <td><code>desktop/mime</code></td>
+          <td>A/B</td>
+          <td>MIME 映射可迁；desktop file ID 按安装来源修正</td>
+          </tr>
+          <tr>
+          <td><code>desktop/mpv</code></td>
+          <td>A/C</td>
+          <td>配置可迁；Vulkan、AMDGPU 硬解后端需实测</td>
+          </tr>
+          <tr>
+          <td><code>desktop/obs</code></td>
+          <td>B/C</td>
+          <td>安装意图可迁；PipeWire portal 和插件打包需确认</td>
+          </tr>
+          <tr>
+          <td><code>desktop/sway</code></td>
+          <td>A/C</td>
+          <td>原生行为可迁；输出配置、脚本、绝对路径、用户服务和 portal
+          是重点</td>
+          </tr>
+          <tr>
+          <td><code>services/rclone</code></td>
+          <td>B/C</td>
+          <td>remote/mount 意图可迁；配置与 token 私有，FUSE
+          卸载和用户监督需重做</td>
+          </tr>
+          <tr>
+          <td><code>secrets/sops</code>、<code>local-files</code></td>
+          <td>B/C</td>
+          <td>sops/age 模型可保留；自动解密、权限、生命周期和 shell hook
+          需重做</td>
+          </tr>
+          <tr>
+          <td><code>communication/mail</code></td>
+          <td>A/C</td>
+          <td>账户和同步策略可迁；secret
+          command、timer、证书和首次全量同步需验证</td>
+          </tr>
+          </tbody>
+          </table>
+          <p>注意：仓库中还有 Ghostty、tmux、Helix 模块，但 workstation
+          profile 当前没有启用；
+          它们应列入“候选配置”，不能当作当前桌面基线。Niri/Noctalia 和
+          Plasma 同理。</p>
+          <h2 id="7-n-级不应直接迁移的内容">7. N
+          级：不应直接迁移的内容</h2>
+          <h3 id="71-nixoshome-manager-结构">7.1 NixOS/Home Manager
+          结构</h3>
+          <ul>
+          <li><code>flake.nix</code> 的
+          inputs、<code>nixosConfigurations</code> 和 Home Manager
+          wiring；</li>
+          <li><code>system.stateVersion</code>、<code>home.stateVersion</code>；</li>
+          <li><code>mySystem.*.enable</code>、<code>myHome.*.enable</code>
+          模块开关和 assertion；</li>
+          <li><code>lib.mkIf</code>、<code>lib.mkDefault</code>、<code>pkgs.writeShellApplication</code>
+          等 Nix 组合方式；</li>
+          <li><code>/nix/store</code> 绝对路径和 <code>lib.getExe</code>
+          生成的路径；</li>
+          <li>NixOS activation script、systemd unit 自动生成和 Nix
+          generation 保留策略；</li>
+          <li><code>hardware-configuration.nix</code> 的 Nix 语法；</li>
+          <li>Nix daemon 的代理和 GC（只有决定在 Gentoo 上继续安装 Nix
+          时才另行设计）；</li>
+          <li><code>NIXOS_OZONE_WL</code> 这类 NixOS 特有环境变量。</li>
+          </ul>
+          <h3 id="72-旧-intelnvidia-硬件策略">7.2 旧 Intel/NVIDIA
+          硬件策略</h3>
+          <ul>
+          <li><code>modules/system/hardware/cpu/intel.nix</code></li>
+          <li><code>modules/system/hardware/gpu/nvidia-prime.nix</code></li>
+          <li><code>modules/system/desktop/nvidia.nix</code></li>
+          <li><code>modules/system/desktop/steam.nix</code> 中 NVIDIA
+          offload 环境</li>
+          <li>旧 PCI bus ID、旧输出接线假设和 Intel/NVIDIA 分工说明</li>
+          </ul>
+          <p>这些文件仍可用于理解旧机和完成数据导出，但不得成为 Gentoo
+          AMD 目标配置的模板。</p>
+          <p>NixOS 配置仓库不应被直接改造成 <code>/etc</code>
+          的镜像。建议后续在此分支新增独立的 <code>gentoo/</code> 清单和
+          dotfiles
+          源文件，保持“可公开声明的配置”与“本机私有状态”分离。</p>
+          <h2 id="8-推荐的迁移顺序">8. 推荐的迁移顺序</h2>
+          <ol type="1">
+          <li><strong>冻结旧机事实</strong>：采集磁盘、数据、网络、服务、用户组、包和运行时版本清单。</li>
+          <li><strong>探测新 AMD 机器</strong>：采集
+          CPU/GPU、PCI、磁盘、显示输出和固件信息，不复用旧 ID。</li>
+          <li><strong>建立可启动基座</strong>：UEFI、内核/initramfs、fstab、AMD
+          microcode、OpenRC、网络、SSH。</li>
+          <li><strong>完成 AMD
+          图形栈</strong>：AMDGPU、Mesa、Vulkan、硬解、32
+          位游戏栈、休眠恢复。</li>
+          <li><strong>完成用户与音频</strong>：PAM、elogind/seat、DBus、PipeWire、Bluetooth、Polkit。</li>
+          <li><strong>打通最小 Sway
+          会话</strong>：greetd、Sway、终端、Fuzzel、portal、输入法、锁屏。</li>
+          <li><strong>迁移原生
+          dotfiles</strong>：Sway、Emacs、Zellij、Fish、fontconfig、Fcitx、MIME。</li>
+          <li><strong>恢复系统服务</strong>：打印/扫描、Docker、libvirt、Tailscale、usbmuxd、Flatpak。</li>
+          <li><strong>单独恢复 Mihomo</strong>：先无订阅基线，再
+          secret、TUN、DNS 和代理联动。</li>
+          <li><strong>恢复有状态应用</strong>：邮件、rclone、Jellyfin、Steam；逐项从加密备份恢复。</li>
+          <li><strong>对照验收后退役旧系统</strong>：在完成备份恢复演练以前保留可启动的
+          NixOS。</li>
+          </ol>
+          <h2 id="9-后续版本应补齐的产物">9. 后续版本应补齐的产物</h2>
+          <p>第一版之后，建议依次补充：</p>
+          <ul>
+          <li>当前 NixOS
+          的“最终生效值”与运行时探测报告，而不仅是源代码静态盘点；</li>
+          <li>新 AMD 机器的硬件清单、内核配置需求和驱动验证；</li>
+          <li>Nix 包名 → Gentoo atom/Flatpak/上游安装方式的映射表；</li>
+          <li>OpenRC runlevel、依赖图和每个服务的 auto/manual
+          状态表；</li>
+          <li>Sway 用户会话的进程树、环境传递和日志方案；</li>
+          <li><code>package.use</code>/license/keywords
+          的最小集合及选择理由；</li>
+          <li>公共配置与私有备份的完整文件清单；</li>
+          <li>分阶段验收表和回滚条件；</li>
+          <li>最终 Gentoo 配置目录结构。</li>
+          </ul>
+          <h2 id="10-第一版验收结论">10. 第一版验收结论</h2>
+          <p>目前最容易保存的是用户层原生配置和配置数据；最需要精细设计的是：</p>
+          <ol type="1">
+          <li>OpenRC 下的用户图形会话与服务监督；</li>
+          <li>新 AMD CPU/GPU 的内核、固件、Mesa/Vulkan、硬解和 32
+          位游戏栈；</li>
+          <li>Mihomo TUN/DNS 与 NetworkManager、Tailscale、Docker
+          的联动；</li>
+          <li>boot/initramfs/fstab/swap/zram/OOM 的显式实现；</li>
+          <li>sops、邮件、rclone 等 secret 与持久状态的安全恢复。</li>
+          </ol>
+          <p>旧机的 Intel/NVIDIA
+          配置不再是迁移难点，因为目标方案明确不保留它。下一版硬件调查
+          应直接围绕新 AMD
+          平台进行；旧硬件配置只用于确保旧机在数据导出期间仍可正常使用。</p>
+        </article>
+        <aside class="page-rail" aria-label="本页提示">
+          <div class="rail-card">
+            <p class="eyebrow">阅读建议</p>
+            <ol>
+              <li>先读目标差异</li>
+              <li>再看 A 级配置</li>
+              <li>聚焦 C 级关键路径</li>
+              <li>最后按顺序实施</li>
+            </ol>
+          </div>
+          <div class="rail-card rail-note">
+            <strong>安全边界</strong>
+            <p>密钥、Token、邮件正文、应用状态和私有配置必须走单独的加密备份。</p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <button class="back-to-top" id="back-to-top" type="button" aria-label="返回顶部">↑</button>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>(() => {
+  const documentRoot = document.getElementById("document");
+  const searchInput = document.getElementById("search-input");
+  const searchResults = document.getElementById("search-results");
+  const searchClear = document.getElementById("search-clear");
+  const toolbar = document.getElementById("toolbar");
+  const toast = document.getElementById("toast");
+  const menuButton = document.getElementById("menu-button");
+  const sidebar = document.getElementById("sidebar");
+  const scrim = document.getElementById("scrim");
+  const escapeHtml = (text) => text.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+  const normalize = (text) => text.toLocaleLowerCase().replace(/\s+/g, " ").trim();
+
+  const headings = [...documentRoot.querySelectorAll("h2, h3")];
+  const h2s = headings.filter(h => h.tagName === "H2");
+  h2s.forEach((heading, index) => {
+    heading.dataset.section = `SECTION ${String(index + 1).padStart(2, "0")}`;
+    const actions = document.createElement("span");
+    actions.className = "heading-actions";
+    actions.innerHTML = '<button class="heading-action link-action" type="button" title="复制本节链接" aria-label="复制本节链接">#</button><button class="heading-action collapse-action" type="button" title="折叠本节" aria-label="折叠本节">−</button>';
+    heading.append(actions);
+  });
+
+  documentRoot.querySelectorAll("table tbody tr").forEach(row => {
+    [...row.cells].forEach(cell => {
+      const raw = cell.textContent.trim();
+      if (/^(A|B|C|N)(\/(A|B|C|N))?$/.test(raw)) {
+        const grades = raw.split("/");
+        cell.dataset.grades = grades.join("");
+        cell.innerHTML = `<span class="grade-badge" aria-label="等级 ${escapeHtml(raw)}">${grades.map(g => `<i class="${g.toLowerCase()}">${g}</i>`).join("<span>/</span>")}</span>`;
+      }
+    });
+  });
+
+  const showToast = (message) => {
+    toast.textContent = message;
+    toast.classList.add("show");
+    clearTimeout(showToast.timer);
+    showToast.timer = setTimeout(() => toast.classList.remove("show"), 1500);
+  };
+
+  documentRoot.addEventListener("click", async event => {
+    const linkButton = event.target.closest(".link-action");
+    const collapseButton = event.target.closest(".collapse-action");
+    if (linkButton) {
+      const heading = linkButton.closest("h2");
+      const url = `${location.href.split("#")[0]}#${encodeURIComponent(heading.id)}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast("本节链接已复制");
+      } catch {
+        location.hash = heading.id;
+        showToast("已定位到本节");
+      }
+    }
+    if (collapseButton) {
+      const heading = collapseButton.closest("h2");
+      const start = [...documentRoot.children].indexOf(heading);
+      const children = [...documentRoot.children];
+      const isCollapsed = collapseButton.textContent === "+";
+      for (let i = start + 1; i < children.length && children[i].tagName !== "H2"; i++) {
+        children[i].classList.toggle("collapsed-block", !isCollapsed);
+      }
+      collapseButton.textContent = isCollapsed ? "−" : "+";
+      collapseButton.title = isCollapsed ? "折叠本节" : "展开本节";
+      collapseButton.setAttribute("aria-label", collapseButton.title);
+    }
+  });
+
+  const searchable = [...documentRoot.querySelectorAll("h2, h3, p, li, tbody tr")]
+    .filter(el => {
+      if (el.matches("li") && el.querySelector("li")) return false;
+      if (el.matches("p") && el.closest("td")) return false;
+      return normalize(el.textContent).length >= 3;
+    })
+    .map((el, index) => {
+      if (!el.id) el.id = `search-hit-${index + 1}`;
+      const section = el.matches("h2, h3") ? el : el.closest("section")?.querySelector("h2, h3");
+      const preceding = headings.filter(h => h.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING).at(-1);
+      return {
+        el,
+        text: normalize(el.textContent),
+        label: (el.matches("h2, h3") ? el : preceding)?.textContent.replace(/[#−+]$/, "").trim() || "文档内容"
+      };
+    });
+
+  const resultSnippet = (text, query) => {
+    const clean = text.replace(/\s+/g, " ").trim();
+    const lower = clean.toLocaleLowerCase();
+    const at = lower.indexOf(query);
+    const start = Math.max(0, at - 42);
+    const end = Math.min(clean.length, at + query.length + 72);
+    let snippet = clean.slice(start, end);
+    if (start) snippet = `…${snippet}`;
+    if (end < clean.length) snippet += "…";
+    const escaped = escapeHtml(snippet);
+    const pattern = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "ig");
+    return escaped.replace(pattern, match => `<mark>${match}</mark>`);
+  };
+
+  const runSearch = () => {
+    const query = normalize(searchInput.value);
+    searchClear.hidden = !query;
+    searchInput.parentElement.querySelector("kbd").hidden = !!query;
+    if (!query) {
+      searchResults.hidden = true;
+      searchResults.innerHTML = "";
+      return;
+    }
+    const matches = searchable
+      .filter(item => item.text.includes(query))
+      .sort((a, b) => (a.text.startsWith(query) ? -1 : 0) - (b.text.startsWith(query) ? -1 : 0))
+      .slice(0, 24);
+    searchResults.hidden = false;
+    if (!matches.length) {
+      searchResults.innerHTML = `<div class="search-empty">没有找到“${escapeHtml(searchInput.value.trim())}”<br>可尝试服务名、模块名或更短的关键词</div>`;
+      return;
+    }
+    searchResults.innerHTML = matches.map((item, index) =>
+      `<button class="search-result" type="button" role="option" data-target="${item.el.id}">
+        <span class="result-index">${String(index + 1).padStart(2, "0")}</span>
+        <span><span class="result-title">${escapeHtml(item.label)}</span><span class="result-snippet">${resultSnippet(item.el.textContent, query)}</span></span>
+      </button>`
+    ).join("");
+  };
+
+  searchInput.addEventListener("input", runSearch);
+  searchInput.addEventListener("keydown", event => {
+    if (event.key === "Enter") searchResults.querySelector(".search-result")?.click();
+    if (event.key === "Escape") {
+      searchInput.value = "";
+      runSearch();
+      searchInput.blur();
+    }
+  });
+  searchClear.addEventListener("click", () => {
+    searchInput.value = "";
+    runSearch();
+    searchInput.focus();
+  });
+  searchResults.addEventListener("click", event => {
+    const result = event.target.closest(".search-result");
+    if (!result) return;
+    const target = document.getElementById(result.dataset.target);
+    target?.closest(".collapsed-block")?.classList.remove("collapsed-block");
+    target?.scrollIntoView({behavior: "smooth", block: "center"});
+    target?.classList.add(target.matches("tr") ? "grade-focus" : "section-flash");
+    setTimeout(() => target?.classList.remove("grade-focus", "section-flash"), 1500);
+    searchResults.hidden = true;
+  });
+  document.addEventListener("click", event => {
+    if (!toolbar.contains(event.target)) searchResults.hidden = true;
+  });
+  document.addEventListener("keydown", event => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLocaleLowerCase() === "k") {
+      event.preventDefault();
+      searchInput.focus();
+      searchInput.select();
+    }
+  });
+  document.getElementById("mobile-search-button").addEventListener("click", () => {
+    searchInput.scrollIntoView({behavior: "smooth", block: "center"});
+    setTimeout(() => searchInput.focus(), 350);
+  });
+
+  document.querySelectorAll("[data-grade-filter]").forEach(button => {
+    button.addEventListener("click", () => {
+      const grade = button.dataset.gradeFilter;
+      const rows = [...documentRoot.querySelectorAll(`td[data-grades*="${grade}"]`)].map(cell => cell.parentElement);
+      button.classList.toggle("active");
+      document.querySelectorAll("[data-grade-filter]").forEach(other => {
+        if (other !== button) other.classList.remove("active");
+      });
+      documentRoot.querySelectorAll(".grade-focus").forEach(row => row.classList.remove("grade-focus"));
+      if (button.classList.contains("active") && rows.length) {
+        rows.forEach(row => row.classList.add("grade-focus"));
+        rows[0].scrollIntoView({behavior: "smooth", block: "center"});
+        showToast(`已标出 ${rows.length} 条 ${grade} 级判断`);
+      } else {
+        const sectionHeading = h2s.find(h => h.textContent.trim().startsWith(`${grade} 级`) || h.textContent.includes(`${grade} 级`));
+        sectionHeading?.scrollIntoView({behavior: "smooth", block: "start"});
+      }
+    });
+  });
+
+  const tocLinks = [...document.querySelectorAll(".toc a")];
+  const headingById = new Map(headings.map(h => [h.id, h]));
+  const updateToc = () => {
+    let current = h2s[0]?.id;
+    const marker = window.scrollY + 130;
+    h2s.forEach(h => {
+      if (h.offsetTop <= marker) current = h.id;
+    });
+    tocLinks.forEach(link => link.classList.toggle("active", decodeURIComponent(link.hash.slice(1)) === current));
+  };
+  tocLinks.forEach(link => link.addEventListener("click", () => closeSidebar()));
+
+  const progressBar = document.getElementById("reading-progress-bar");
+  const backToTop = document.getElementById("back-to-top");
+  const onScroll = () => {
+    const max = document.documentElement.scrollHeight - innerHeight;
+    progressBar.style.width = `${max > 0 ? (scrollY / max) * 100 : 0}%`;
+    backToTop.classList.toggle("visible", scrollY > 650);
+    updateToc();
+  };
+  addEventListener("scroll", onScroll, {passive: true});
+  addEventListener("resize", onScroll);
+  backToTop.addEventListener("click", () => scrollTo({top: 0, behavior: "smooth"}));
+
+  const openSidebar = () => {
+    document.body.classList.add("sidebar-open");
+    scrim.hidden = false;
+    menuButton.setAttribute("aria-expanded", "true");
+  };
+  const closeSidebar = () => {
+    document.body.classList.remove("sidebar-open");
+    scrim.hidden = true;
+    menuButton.setAttribute("aria-expanded", "false");
+  };
+  menuButton.addEventListener("click", openSidebar);
+  document.getElementById("sidebar-close").addEventListener("click", closeSidebar);
+  scrim.addEventListener("click", closeSidebar);
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") closeSidebar();
+  });
+
+  onScroll();
+})();
+</script>
+</body>
+</html>
